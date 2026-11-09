@@ -9,7 +9,6 @@
 <a href="README.ru.md"><img src="https://img.shields.io/badge/Русский-README.ru.md-ff2d55?style=for-the-badge&labelColor=1c1c1e" alt="Русский" /></a>
 
 <br />
-<br />
 
 <a href="https://github.com/ParanoaiDev/obsidian-flora/releases/latest"><img src="https://img.shields.io/github/manifest-json/v/ParanoaiDev/obsidian-flora?style=flat-square&label=version&color=0a84ff&labelColor=1c1c1e" alt="Version" /></a>
 <a href="https://obsidian.md"><img src="https://img.shields.io/badge/Obsidian-1.4%2B-7c3aed?style=flat-square&logo=obsidian&logoColor=white&labelColor=1c1c1e" alt="Obsidian 1.4+" /></a>
