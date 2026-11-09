@@ -27,9 +27,9 @@ and signals run along them while you think.
 
 <br />
 
-<img src="assets/screenshots/start-screen.webp" alt="Flora start screen: a greeting, quick actions and recent notes over living neurons" width="100%" />
+<img src="assets/demo/neurograph.webp" alt="Animated demo: the Neurograph drifts toward a hub note, which lights up together with every note it links to" width="100%" />
 
-<sub>The start screen that replaces "No file is open". Everything you see here is rendered live.</sub>
+<sub>Recorded straight from the Neurograph. Hover a cell and it lights up together with everything it links to.</sub>
 
 </div>
 
@@ -111,7 +111,7 @@ Every part can be switched on and off on its own in **Settings → Flora**.
 
 ### Canvas
 
-<img src="assets/screenshots/canvas.webp" alt="A roadmap canvas with living axons between cards" width="100%" />
+<img src="assets/demo/canvas.webp" alt="Animated demo: pulses travel along the arrows of a roadmap canvas" width="100%" />
 
 <br />
 <br />
@@ -131,7 +131,14 @@ Every part can be switched on and off on its own in **Settings → Flora**.
 <br />
 <br />
 
-### Start screen, light sidebar
+### Start screen
+
+<img src="assets/screenshots/start-screen.webp" alt="Flora start screen: a greeting, quick actions and recent notes over living neurons" width="100%" />
+
+<sub>Replaces "No file is open" in every empty tab.</sub>
+
+<br />
+<br />
 
 <img src="assets/screenshots/start-screen-light.webp" alt="Start screen next to the light sidebar" width="100%" />
 
