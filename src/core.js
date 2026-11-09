@@ -4,12 +4,16 @@ function floraDetectLang() {
   try {
     const pick = (v) => (String(v || "").toLowerCase().startsWith("ru") ? "ru" : "en");
     if (typeof window !== "undefined" && window.FLORA_LANG_OVERRIDE) return pick(window.FLORA_LANG_OVERRIDE);
+    // getLanguage() есть в Obsidian 1.8.7+; раньше язык лежал только в localStorage
+    if (typeof obsidian !== "undefined" && typeof obsidian.getLanguage === "function") return pick(obsidian.getLanguage());
     return pick(window.localStorage.getItem("language")); // null/"" — английский Obsidian
-  } catch (e) {
+  } catch {
     return "en";
   }
 }
 let FLORA_LANG = floraDetectLang();
+// документ активного окна Obsidian (поддержка всплывающих окон); вне Obsidian — обычный документ
+function floraDoc() { return typeof activeDocument !== "undefined" ? activeDocument : window.document; }
 function L(ru, en) { return FLORA_LANG === "ru" ? ru : en; }
 // plural(n, ["нейрон", "нейрона", "нейронов"], ["neuron", "neurons"])
 function plural(n, ru, en) {
@@ -35,8 +39,6 @@ const NG = (function () {
   const UNRESOLVED_COLOR = "#59584f";
   const BG = "#050605";
 
-  const IMG_EXT = /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i;
-
   /* ------------------------------------------------------------------ */
   /* Сборка графа                                                        */
   /* ------------------------------------------------------------------ */
@@ -45,7 +47,7 @@ const NG = (function () {
   function stripExt(p) { return p.replace(/\.(md|canvas)$/i, ""); }
   function cardLabel(text) {
     const line = (text || "").split("\n").map((s) => s.trim()).find((s) => s && !/^-{3,}$/.test(s)) || "";
-    const clean = line.replace(/!?\[\[([^\]|]+)(\|[^\]]+)?\]\]/g, "$1").replace(/[#*_`>~\[\]]/g, "").trim();
+    const clean = line.replace(/!?\[\[([^\]|]+)(\|[^\]]+)?\]\]/g, "$1").replace(/[#*_`>~[\]]/g, "").trim();
     return clean.length > 34 ? clean.slice(0, 33) + "…" : clean || "…";
   }
 
@@ -239,9 +241,8 @@ const NG = (function () {
       // основной режим — WebGL2 (свечение, сглаживание); 2D-холст становится слоем подписей
       this.scene = null; this.glc = null;
       if (!this.opts.forceCanvas && canvas.parentElement) {
-        const glc = (canvas.ownerDocument || document).createElement("canvas");
+        const glc = (canvas.ownerDocument || floraDoc()).createElement("canvas");
         glc.className = "ng-gl";
-        glc.style.cssText = "position:absolute;left:0;top:0;pointer-events:none;";
         canvas.parentElement.insertBefore(glc, canvas);
         try {
           this.scene = new GLScene(glc);
@@ -252,12 +253,12 @@ const NG = (function () {
           glc.remove();
         }
       }
-      canvas.style.position = "absolute"; canvas.style.left = "0"; canvas.style.top = "0";
+      canvas.classList.add("ng-2d");
       this._bind();
       this.resize();
       this._last = performance.now();
       this._loop = this._loop.bind(this);
-      this.raf = requestAnimationFrame(this._loop);
+      this.raf = window.requestAnimationFrame(this._loop);
     }
 
     /* ---------- данные ---------- */
@@ -589,7 +590,7 @@ const NG = (function () {
           const n = this._hit(p.x, p.y);
           if (n !== this.hover) {
             this.hover = n;
-            c.style.cursor = n ? "pointer" : "grab";
+            c.classList.toggle("is-pointing", !!n);
             if (n) this.fire(n, null, true);
             this.opts.onHover && this.opts.onHover(n, ev);
           }
@@ -616,7 +617,7 @@ const NG = (function () {
         dbl: () => this.fit(false),
       };
       if (this.opts.external) {
-        c.style.pointerEvents = "none"; // ввод остаётся у обычного графа Obsidian
+        c.classList.add("ng-passive"); // ввод остаётся у обычного графа Obsidian
       } else {
         c.addEventListener("pointerdown", this._h.down);
         c.addEventListener("pointermove", this._h.move);
@@ -624,8 +625,7 @@ const NG = (function () {
         c.addEventListener("pointerleave", this._h.leave);
         if (!this.opts.noWheel) c.addEventListener("wheel", this._h.wheel, { passive: false });
         c.addEventListener("dblclick", this._h.dbl);
-        c.style.cursor = "grab";
-        c.style.touchAction = "none";
+        c.classList.add("ng-interactive");
       }
       if (typeof ResizeObserver !== "undefined") { this._ro = new ResizeObserver(() => this.resize()); this._ro.observe(c.parentElement || c); }
     }
@@ -655,7 +655,7 @@ const NG = (function () {
     }
     destroy() {
       this._destroyed = true;
-      cancelAnimationFrame(this.raf);
+      window.cancelAnimationFrame(this.raf);
       const c = this.c, h = this._h;
       c.removeEventListener("pointerdown", h.down); c.removeEventListener("pointermove", h.move);
       c.removeEventListener("pointerup", h.up); c.removeEventListener("pointerleave", h.leave);
@@ -671,7 +671,7 @@ const NG = (function () {
       let s = this.sprites.get(key);
       if (s) return s;
       const S = 64;
-      s = document.createElement("canvas"); s.width = s.height = S;
+      s = floraDoc().createElement("canvas"); s.width = s.height = S;
       const g = s.getContext("2d");
       const c = typeof color === "string" ? hexRgb(color) : color;
       const gr = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
@@ -685,7 +685,7 @@ const NG = (function () {
       return s;
     }
     _makeGrain() {
-      const S = 160, c = document.createElement("canvas");
+      const S = 160, c = floraDoc().createElement("canvas");
       c.width = c.height = S;
       const g = c.getContext("2d"), d = g.createImageData(S, S);
       for (let i = 0; i < d.data.length; i += 4) {
@@ -699,7 +699,7 @@ const NG = (function () {
     /* ---------- кадр ---------- */
     _loop(now) {
       if (this._destroyed) return;
-      this.raf = requestAnimationFrame(this._loop);
+      this.raf = window.requestAnimationFrame(this._loop);
       if (!this.c.isConnected || this.c.offsetParent === null) { this._last = now; return; }
       if (this.opts.pauseOffscreen) { // встроенная полоса: не рисуем, когда уехала за экран
         const rc = this.c.getBoundingClientRect(), vh = (this.c.ownerDocument.defaultView || window).innerHeight;
@@ -1001,7 +1001,7 @@ const NG = (function () {
       if (glMode) return this._hud(ctx);
       // виньетка как у окуляра
       if (!this._vig) {
-        const v = document.createElement("canvas");
+        const v = floraDoc().createElement("canvas");
         v.width = Math.ceil(w); v.height = Math.ceil(h);
         const g = v.getContext("2d");
         const R = Math.hypot(w, h) / 2;
@@ -1733,7 +1733,7 @@ const NG = (function () {
       this.container = this.r.containerEl;
       this.onDead = opts.onDead;
       this.sizeK = opts.sizeK || 0.72;
-      const doc = this.container.ownerDocument || document;
+      const doc = this.container.ownerDocument || floraDoc();
       this.ui = doc.createElement("canvas");
       this.ui.className = "ng-skin-ui";
       this.container.prepend(this.ui);
@@ -1886,7 +1886,7 @@ const NG = (function () {
       const vw = S.w / z / 2 + 80, vh = S.h / z / 2 + 80;
       const vis = (x, y, m) => Math.abs(x - cam.x) < vw + m && Math.abs(y - cam.y) < vh + m;
       const SX = this.SX, SY = this.SY, SW = this.SW, SR = this.SR, SG = this.SG, SB = this.SB, SI = this.SI;
-      const WHITE = [1, 0.95, 0.85], BONE_L = toLin(hexRgb(BONE));
+      const WHITE = [1, 0.95, 0.85];
 
       this._depth(S);
 
@@ -2067,14 +2067,13 @@ const NG = (function () {
       this.cv = getCanvas();
       this.wrap = this.cv.wrapperEl;
       this.opts = Object.assign({ activity: 1, onDead: null }, opts || {});
-      const doc = this.wrap.ownerDocument || document;
+      const doc = this.wrap.ownerDocument || floraDoc();
       this.wrap.classList.add("ng-canvas");
       this.glc = doc.createElement("canvas");
       this.glc.className = "ng-canvas-gl";
-      this.glc.style.cssText = "position:absolute;left:0;top:0;pointer-events:none;";
       this.wrap.prepend(this.glc);
       try { this.scene = new CanvasScene(this.glc); this.scene.ca = 0.003; }
-      catch (e) { this.scene = null; this.glc.remove(); this.wrap.classList.add("ng-canvas-nogl"); }
+      catch { this.scene = null; this.glc.remove(); this.wrap.classList.add("ng-canvas-nogl"); }
       this.S = { cam: { x: 0, y: 0, z: 1 }, time: 0, fade: 0, w: 1, h: 1, nodes: [], edges: [], signals: [] };
       this.nstate = new Map(); this.estate = new Map();
       this.hidden = new Set(); this.lastSel = new Set();
@@ -2082,7 +2081,7 @@ const NG = (function () {
       if (typeof ResizeObserver !== "undefined") { this._ro = new ResizeObserver(() => this.resize()); this._ro.observe(this.wrap); }
       this._last = performance.now();
       this._loop = this._loop.bind(this);
-      if (this.scene) this.raf = requestAnimationFrame(this._loop);
+      if (this.scene) this.raf = window.requestAnimationFrame(this._loop);
     }
     resize() {
       const w = Math.max(1, this.wrap.clientWidth), h = Math.max(1, this.wrap.clientHeight);
@@ -2155,7 +2154,7 @@ const NG = (function () {
     }
     _loop(now) {
       if (this._destroyed) return;
-      this.raf = requestAnimationFrame(this._loop);
+      this.raf = window.requestAnimationFrame(this._loop);
       const cv = this.getC();
       if (!cv || cv !== this.cv || !this.wrap.isConnected) { if (this.opts.onDead) this.opts.onDead(); return; }
       if (this.wrap.offsetParent === null) { this._last = now; return; }
@@ -2188,7 +2187,7 @@ const NG = (function () {
         this._geom(es);
         if (!es.pts) continue;
         const disp = edge.path && edge.path.display;
-        if (disp && !this.hidden.has(disp)) { disp.style.opacity = "0"; this.hidden.add(disp); }
+        if (disp && !this.hidden.has(disp)) { disp.classList.add("ng-path-hidden"); this.hidden.add(disp); }
         const sa = this._nodeState(edge.from.node), sb = this._nodeState(edge.to.node);
         const own = edge.color ? toLin(hexRgb(canvasColor(edge.color, BONE))) : null;
         es.ca = own || sa.lin; es.cb = own || sb.lin;
@@ -2244,9 +2243,9 @@ const NG = (function () {
     }
     destroy() {
       this._destroyed = true;
-      cancelAnimationFrame(this.raf);
+      window.cancelAnimationFrame(this.raf);
       this._ro && this._ro.disconnect();
-      for (const el of this.hidden) el.style.opacity = "";
+      for (const el of this.hidden) el.classList.remove("ng-path-hidden");
       this.hidden.clear();
       for (const st of this.nstate.values()) if (st.node.nodeEl) st.node.nodeEl.style.removeProperty("--ng-flash");
       if (this.scene) this.scene.dispose();

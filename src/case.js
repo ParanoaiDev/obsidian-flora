@@ -72,7 +72,7 @@ class CaseStore {
     const text = await this.app.vault.read(file);
     const m = /```ng-case\s*\n([\s\S]*?)\n```/.exec(text);
     if (!m) return null;
-    try { return this.normalize(JSON.parse(m[1])); } catch (e) { return null; }
+    try { return this.normalize(JSON.parse(m[1])); } catch { return null; }
   }
   normalize(d) {
     d = d || {};
@@ -130,15 +130,15 @@ class CaseStore {
     }
     return out.join("\n");
   }
-  async save(file, d) { await this.app.vault.modify(file, this.render(d)); }
+  async save(file, d) { const text = this.render(d); await this.app.vault.process(file, () => text); }
   async create() {
     let max = 0;
     for (const f of this.list()) { const c = this.app.metadataCache.getFileCache(f); const n = parseInt(caseFmCode(c && c.frontmatter), 10); if (n > max) max = n; }
     const code = String(max + 1).padStart(4, "0");
-    const folder = caseFolder(), name = L("Дело ", "Case ") + code;
+    const folder = obsidian.normalizePath(caseFolder()), name = L("Дело ", "Case ") + code;
     if (!this.app.vault.getAbstractFileByPath(folder)) await this.app.vault.createFolder(folder);
-    let path = folder + "/" + name + ".md", i = 2;
-    while (this.app.vault.getAbstractFileByPath(path)) path = folder + "/" + name + " (" + i++ + ").md";
+    let path = obsidian.normalizePath(folder + "/" + name + ".md"), i = 2;
+    while (this.app.vault.getAbstractFileByPath(path)) path = obsidian.normalizePath(folder + "/" + name + " (" + i++ + ").md");
     const d = this.normalize({ code, title: name });
     return this.app.vault.create(path, this.render(d));
   }
@@ -164,11 +164,11 @@ class CaseView extends obsidian.ItemView {
     const root = this.contentEl;
     root.empty ? root.empty() : (root.textContent = "");
     root.classList.add("ng-case-root");
-    this.doc = root.ownerDocument || document;
+    this.doc = root.ownerDocument || floraDoc();
     this.side = this.mk("aside", "ng-case-side", root);
     this.main = this.mk("main", "ng-case-main", root);
     this.renderSide();
-    this.registerEvent(this.app.metadataCache.on("changed", (f) => { if (this.store.isCase(f)) { clearTimeout(this.sideT); this.sideT = setTimeout(() => this.renderSide(), 300); } }));
+    this.registerEvent(this.app.metadataCache.on("changed", (f) => { if (this.store.isCase(f)) { window.clearTimeout(this.sideT); this.sideT = window.setTimeout(() => this.renderSide(), 300); } }));
     this.registerEvent(this.app.vault.on("modify", (f) => {
       // файл дела поправили руками — перечитываем (свои записи пропускаем)
       if (this.file && f === this.file && Date.now() - (this.selfWrite || 0) > 1500 && !this.dirty) this.openCase(f);
@@ -178,7 +178,7 @@ class CaseView extends obsidian.ItemView {
       if (first) await this.openCase(first); else this.renderEmpty();
     }
   }
-  async onClose() { if (this.R) { this.R.destroy(); this.R = null; } clearTimeout(this.saveT); if (this.dirty) await this.flush(); }
+  async onClose() { if (this.R) { this.R.destroy(); this.R = null; } window.clearTimeout(this.saveT); if (this.dirty) await this.flush(); }
 
   mk(tag, cls, parent, text) {
     const e = this.doc.createElement(tag);
@@ -212,10 +212,10 @@ class CaseView extends obsidian.ItemView {
   // ---------- сохранение ----------
   changed(structural) {
     this.dirty = true;
-    clearTimeout(this.saveT);
-    this.saveT = setTimeout(() => this.flush(), 700);
-    clearTimeout(this.mapT);
-    this.mapT = setTimeout(() => this.renderMap(), structural ? 0 : 500);
+    window.clearTimeout(this.saveT);
+    this.saveT = window.setTimeout(() => this.flush(), 700);
+    window.clearTimeout(this.mapT);
+    this.mapT = window.setTimeout(() => this.renderMap(), structural ? 0 : 500);
     this.renderStats();
   }
   async flush() {
@@ -287,7 +287,7 @@ class CaseView extends obsidian.ItemView {
     sum.value = d.summary; sum.placeholder = L("Суть дела: что известно, что ищем, гипотеза…", "What the case is about: what is known, what you are looking for, your hypothesis…"); sum.rows = 2;
     sum.addEventListener("input", () => { d.summary = sum.value; this.changed(); });
     const row = this.mk("div", "ng-case-head-row", head);
-    this.chips(row, CASE_STATUS.map((s) => { const t = caseStatusLabel(s); return [s, t.charAt(0).toUpperCase() + t.slice(1)]; }), d.status, (v) => { d.status = v; setTimeout(() => this.renderSide(), 800); }, "ng-case-status ng-seg");
+    this.chips(row, CASE_STATUS.map((s) => { const t = caseStatusLabel(s); return [s, t.charAt(0).toUpperCase() + t.slice(1)]; }), d.status, (v) => { d.status = v; window.setTimeout(() => this.renderSide(), 800); }, "ng-case-status ng-seg");
     this.statsEl = this.mk("div", "ng-case-stats", row);
 
     // карта связей — живая ткань
@@ -296,7 +296,7 @@ class CaseView extends obsidian.ItemView {
     this.mapHint = this.mk("div", "ng-case-map-hint", mapWrap);
     this.R = new NG.NeuralRenderer(mapCanvas, {
       hud: false, labels: true, noWheel: true, pauseOffscreen: true, activity: 1.6, maxFitZoom: 1.8, maxFps: 30, renderScale: 1,
-      onOpen: (n) => { const card = m.querySelector('[data-entity="' + n.id + '"]'); if (card) { card.scrollIntoView({ behavior: "smooth", block: "center" }); card.classList.add("is-flash"); setTimeout(() => card.classList.remove("is-flash"), 900); } },
+      onOpen: (n) => { const card = m.querySelector('[data-entity="' + n.id + '"]'); if (card) { card.scrollIntoView({ behavior: "smooth", block: "center" }); card.classList.add("is-flash"); window.setTimeout(() => card.classList.remove("is-flash"), 900); } },
     });
 
     this.sectionEntities(m);
@@ -502,8 +502,8 @@ class CaseView extends obsidian.ItemView {
 /** Карточка дела внутри самой заметки (блок ```ng-case```) */
 function renderCaseBlock(plugin, src, el, ctx) {
   let d;
-  try { d = plugin.cases.normalize(JSON.parse(src)); } catch (e) { el.textContent = L("Данные дела повреждены", "The case data is damaged"); return; }
-  const doc = el.ownerDocument || document;
+  try { d = plugin.cases.normalize(JSON.parse(src)); } catch { el.textContent = L("Данные дела повреждены", "The case data is damaged"); return; }
+  const doc = el.ownerDocument || floraDoc();
   const mk = (tag, cls, parent, text) => { const e = doc.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; parent.appendChild(e); return e; };
   const box = mk("div", "ng-case-block", el);
   mk("div", "ng-case-block-meta", box, L("Дело ", "Case ") + d.code + ", " + caseStatusLabel(d.status));

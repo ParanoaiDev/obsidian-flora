@@ -16,7 +16,7 @@ Thanks for wanting to make Flora better. Bug reports, ideas and pull requests ar
 Flora has no dependencies and no bundler. The source is plain JavaScript and CSS in `src/`, and `build.js` concatenates it into a single `main.js` and `styles.css`.
 
 ```bash
-node build.js                                   # builds into dist/
+node build.js                                   # builds main.js and styles.css in the repo root
 node build.js "/path/to/vault/.obsidian/plugins/flora"   # builds straight into a vault
 ```
 

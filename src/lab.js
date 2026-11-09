@@ -65,7 +65,7 @@ class LabScreen {
   build(host) {
     this.destroy();
     this.tick = 0;
-    const doc = host.ownerDocument || document;
+    const doc = host.ownerDocument || floraDoc();
     const mk = (tag, cls, parent, text) => { const e = doc.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; (parent || el).appendChild(e); return e; };
     const el = this.el = doc.createElement("div");
     el.className = "ng-lab";

@@ -82,7 +82,7 @@ class DailyTools {
     try {
       const p = this.app.internalPlugins && this.app.internalPlugins.getPluginById && this.app.internalPlugins.getPluginById("daily-notes");
       o = (p && p.instance && p.instance.options) || {};
-    } catch (e) { /* нет плагина — значения по умолчанию */ }
+    } catch { /* нет плагина — значения по умолчанию */ }
     return {
       format: (o.format || "YYYY-MM-DD").trim() || "YYYY-MM-DD",
       folder: (o.folder || "").trim().replace(/^\/+|\/+$/g, ""),
@@ -119,7 +119,7 @@ class DailyTools {
   pathFor(date) {
     const o = this.options();
     const name = this.format(date, o.format) + ".md";
-    return o.folder ? o.folder + "/" + name : name;
+    return obsidian.normalizePath(o.folder ? o.folder + "/" + name : name);
   }
   fileFor(date) {
     const direct = this.app.vault.getAbstractFileByPath(this.pathFor(date));
@@ -146,14 +146,13 @@ class DailyTools {
     let f = this.fileFor(date);
     if (!f) {
       const o = this.options();
-      if (o.folder && !this.app.vault.getAbstractFileByPath(o.folder)) await this.app.vault.createFolder(o.folder);
+      if (o.folder && !this.app.vault.getAbstractFileByPath(obsidian.normalizePath(o.folder))) await this.app.vault.createFolder(obsidian.normalizePath(o.folder));
       f = await this.app.vault.create(this.pathFor(date), await this.templateText(date));
     }
     await (leaf || this.app.workspace.getLeaf(false)).openFile(f);
   }
   /** соседняя существующая ежедневная заметка (dir = -1 / +1) */
   neighbour(date, dir) {
-    const o = this.options();
     let best = null;
     for (const f of this.app.vault.getMarkdownFiles()) {
       const d = this.dayOf(f);
@@ -198,7 +197,7 @@ class DayHeader {
   build(file, day) {
     this.destroy(true);
     this.file = file; this.day = day;
-    const doc = this.leaf.view.containerEl.ownerDocument || document;
+    const doc = this.leaf.view.containerEl.ownerDocument || floraDoc();
     const el = this.el = doc.createElement("div");
     el.className = "ng-day";
     el.setAttribute("contenteditable", "false");
@@ -311,7 +310,7 @@ class DayHeader {
     const key = d0.getTime() + ":" + days;
     if (this.monthKey !== key) {
       this.monthKey = key;
-      this.monthEl.empty ? this.monthEl.empty() : (this.monthEl.innerHTML = "");
+      this.monthEl.empty ? this.monthEl.empty() : (this.monthEl.textContent = "");
       const label = this.monthEl.appendChild(doc.createElement("span"));
       label.className = "ng-day-month-label";
       const mn = monthNames()[this.day.getMonth()];
@@ -344,8 +343,8 @@ class DayHeader {
       this.resetArmed = true;
       b.classList.add("is-armed");
       b.classList.add("is-armed-text"); b.dataset.label = L("Сбросить?", "Reset?");
-      clearTimeout(this.resetTimer);
-      this.resetTimer = setTimeout(() => this.disarmReset(), 3000);
+      window.clearTimeout(this.resetTimer);
+      this.resetTimer = window.setTimeout(() => this.disarmReset(), 3000);
       return;
     }
     this.disarmReset();
@@ -353,21 +352,21 @@ class DayHeader {
   }
   disarmReset() {
     this.resetArmed = false;
-    clearTimeout(this.resetTimer);
+    window.clearTimeout(this.resetTimer);
     if (this.resetBtn) { this.resetBtn.classList.remove("is-armed", "is-armed-text"); }
   }
   async resetDay() {
     const tpl = (await this.tools.templateText(this.day)) || journalTemplate();
     const ed = this.leaf.view && this.leaf.view.editor;
     if (ed && typeof ed.setValue === "function") ed.setValue(tpl);
-    else await this.app.vault.modify(this.file, tpl);
+    else await this.app.vault.process(this.file, () => tpl);
     // курсор — в первый пункт списка
     if (ed && typeof ed.setCursor === "function") {
       const lines = tpl.split("\n");
       const i = lines.findIndex((l) => /^\s*-\s/.test(l));
       if (i >= 0) ed.setCursor({ line: i, ch: lines[i].length });
     }
-    if (this.startEl) this.startEl.style.display = "none";
+    if (this.startEl) this.startEl.classList.add("is-hidden");
   }
 
   isEmpty() {
@@ -378,8 +377,8 @@ class DayHeader {
 
   renderStart() {
     const empty = this.isEmpty();
-    if (!empty) { this.startEl.style.display = "none"; return; }
-    this.startEl.style.display = "";
+    if (!empty) { this.startEl.classList.add("is-hidden"); return; }
+    this.startEl.classList.remove("is-hidden");
     if (this.startEl.childElementCount) return;
     const doc = this.el.ownerDocument;
     const b = this.startEl.appendChild(doc.createElement("button"));
@@ -390,7 +389,7 @@ class DayHeader {
   }
 
   destroy(keepState) {
-    clearTimeout(this.resetTimer); this.resetArmed = false;
+    window.clearTimeout(this.resetTimer); this.resetArmed = false;
     if (this.R) { this.R.destroy(); this.R = null; }
     if (this.el) { this.el.remove(); this.el = null; }
     this.monthKey = null; this.sig = "";

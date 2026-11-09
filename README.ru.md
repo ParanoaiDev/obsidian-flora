@@ -178,7 +178,7 @@ cd obsidian-flora
 node build.js
 ```
 
-Готовый плагин появится в `dist/`. Можно собрать сразу в хранилище:
+`main.js` и `styles.css` появятся в корне репозитория рядом с `manifest.json`. Можно собрать сразу в хранилище:
 
 ```bash
 node build.js "/путь/к/хранилищу/.obsidian/plugins/flora"

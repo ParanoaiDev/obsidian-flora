@@ -1,9 +1,9 @@
 {
   "id": "flora",
   "name": "Flora",
-  "version": "5.3.0",
+  "version": "5.3.1",
   "minAppVersion": "1.4.0",
-  "description": "A new look for all of Obsidian and living neural graphs: the graph view, canvases, a daily journal, a start screen and an investigation board.",
+  "description": "Redesign the whole app with glass panels and soft colors, and turn your notes into living neural graphs: graph view, canvases, a daily journal, a start screen and a case board.",
   "author": "Paranoia Dev",
   "isDesktopOnly": false
 }

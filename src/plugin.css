@@ -206,3 +206,12 @@
 
 /* круглые элементы остаются кругами (скин включает iOS-скругления для всех кнопок) */
 .ng-day .ng-day-dot, .ng-ctl .ng-ctl-btn, .ng-day .ng-day-nav button, .ng-day .ng-day-start button { corner-shape: round; }
+
+/* слои, которые раньше задавались прямо в коде */
+canvas.ng-gl, canvas.ng-2d { position: absolute; left: 0; top: 0; }
+canvas.ng-gl, canvas.ng-canvas-gl, canvas.ng-passive { pointer-events: none; }
+canvas.ng-canvas-gl { position: absolute; left: 0; top: 0; }
+canvas.ng-interactive { cursor: grab; touch-action: none; }
+canvas.ng-interactive.is-pointing { cursor: pointer; }
+.ng-path-hidden { opacity: 0 !important; }
+.ng-day-start.is-hidden { display: none; }

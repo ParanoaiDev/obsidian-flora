@@ -2,6 +2,14 @@
 
 All notable changes to Flora are listed here. Versions follow [semantic versioning](https://semver.org).
 
+## 5.3.1
+
+### Changed
+- Ready for the Obsidian community directory: layout styles moved from code into CSS, timers and documents are popout-window aware, background file edits use `Vault.process`, and constructed paths go through `normalizePath`.
+- The Flora design now also applies to popout windows.
+- The interface language is read with `getLanguage()` where available.
+- `node build.js` now writes `main.js` and `styles.css` to the repository root, like the official plugin template.
+
 ## 5.3.0
 
 ### Added

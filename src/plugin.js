@@ -29,7 +29,7 @@ class NeuralGraphView extends obsidian.ItemView {
     this.buildControls(wrap);
     await this.refresh();
 
-    const later = () => { clearTimeout(this._timer); this._timer = setTimeout(() => this.refresh(), 1200); };
+    const later = () => { window.clearTimeout(this._timer); this._timer = window.setTimeout(() => this.refresh(), 1200); };
     this.registerEvent(this.app.metadataCache.on("resolved", later));
     this.registerEvent(this.app.vault.on("create", later));
     this.registerEvent(this.app.vault.on("delete", later));
@@ -38,7 +38,7 @@ class NeuralGraphView extends obsidian.ItemView {
   }
 
   async onClose() {
-    clearTimeout(this._timer);
+    window.clearTimeout(this._timer);
     if (this.renderer) this.renderer.destroy();
     this.renderer = null;
   }
@@ -98,7 +98,7 @@ class NeuralGraphView extends obsidian.ItemView {
     const canvases = {};
     for (const f of all) {
       if (f.extension !== "canvas") continue;
-      try { canvases[f.path] = JSON.parse((await app.vault.cachedRead(f)) || "{}"); } catch (e) { /* битый холст — пропускаем */ }
+      try { canvases[f.path] = JSON.parse((await app.vault.cachedRead(f)) || "{}"); } catch { /* битый холст — пропускаем */ }
     }
     const s = this.plugin.settings;
     return NG.buildGraph({
@@ -261,11 +261,20 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     this.registerEvent(this.app.workspace.on("layout-change", () => this.syncSkins()));
     this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.syncSkins()));
     this.registerInterval(window.setInterval(() => this.syncSkins(), 1000));
+    // всплывающее окно получает дизайн Flora сразу при открытии
+    this.registerEvent(this.app.workspace.on("window-open", () => this.applySkin()));
+  }
+
+  /** все открытые окна Obsidian: главное и всплывающие */
+  forEachDoc(fn) {
+    const docs = new Set([window.document]);
+    const ws = this.app.workspace;
+    if (ws && typeof ws.iterateAllLeaves === "function") ws.iterateAllLeaves((l) => { const d = l.view && l.view.containerEl && l.view.containerEl.ownerDocument; if (d) docs.add(d); });
+    for (const d of docs) fn(d);
   }
 
   onunload() {
-    document.body.classList.remove("ng-skin");
-    delete document.body.dataset.floraAccent;
+    this.forEachDoc((d) => { d.body.classList.remove("ng-skin"); delete d.body.dataset.floraAccent; });
     if (this.labs) { for (const l of this.labs.values()) l.destroy(); this.labs.clear(); }
     for (const leaf of [...this.skins.keys()]) this.dropSkin(leaf);
     for (const h of this.days.values()) h.destroy();
@@ -273,10 +282,12 @@ class NeuralGraphPlugin extends obsidian.Plugin {
   }
 
   applySkin() {
-    const b = document.body;
-    b.classList.toggle("ng-skin", !!this.settings.fullSkin);
     const a = this.settings.accent || "blue";
-    if (this.settings.fullSkin && a !== "blue") b.dataset.floraAccent = a; else delete b.dataset.floraAccent;
+    this.forEachDoc((d) => {
+      const b = d.body;
+      b.classList.toggle("ng-skin", !!this.settings.fullSkin);
+      if (this.settings.fullSkin && a !== "blue") b.dataset.floraAccent = a; else delete b.dataset.floraAccent;
+    });
   }
 
   async openCaseBoard(path) {

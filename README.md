@@ -178,7 +178,7 @@ cd obsidian-flora
 node build.js
 ```
 
-The plugin lands in `dist/`. You can also build straight into a vault:
+`main.js` and `styles.css` land in the repository root, next to `manifest.json`. You can also build straight into a vault:
 
 ```bash
 node build.js "/path/to/vault/.obsidian/plugins/flora"
