@@ -1,0 +1,10 @@
+# сборка — прикладывается к релизам, в репозиторий не кладём
+dist/
+main.js
+styles.css
+!src/*.css
+
+node_modules/
+.DS_Store
+Thumbs.db
+*.log

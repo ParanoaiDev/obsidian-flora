@@ -1,0 +1,238 @@
+
+/* =========================================================
+   Расследование — доска дела (стиль Flora, светлая и тёмная тема)
+   ========================================================= */
+.workspace-leaf-content[data-type="ng-case-view"] .view-content.ng-case-root { padding: 0; display: flex; overflow: hidden; background: var(--background-primary); }
+.ng-case-root, .ng-case-block {
+  --cs-font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --cs-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --cs-accent: var(--fl-accent, var(--interactive-accent));
+  --cs-accent-rgb: var(--fl-accent-rgb, 10, 132, 255);
+  --cs-fill: var(--fl-fill, rgba(118, 118, 128, 0.18));
+  --cs-fill-2: var(--fl-fill-2, rgba(118, 118, 128, 0.28));
+  --cs-sep: var(--fl-sep, var(--background-modifier-border));
+  --cs-card: var(--background-primary-alt);
+  --cs-raised: var(--fl-elevated-2, var(--background-primary-alt));
+  font-family: var(--cs-font);
+  color: var(--text-normal);
+}
+.ng-case-root button { box-shadow: none; height: auto; cursor: pointer; font-family: var(--cs-font); }
+.ng-case-btn-ico { display: inline-flex; }
+.ng-case-btn-ico svg { width: 15px; height: 15px; stroke-width: 2.4; }
+
+/* ---------- список дел ---------- */
+.ng-case-side { width: 240px; flex: none; padding: 18px 12px; overflow-y: auto; border-right: 1px solid var(--cs-sep); background: color-mix(in srgb, var(--text-normal) 2.5%, transparent); }
+.ng-case-side-title { font-family: var(--cs-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; padding: 0 6px; }
+.ng-case-root .ng-case-new {
+  display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 12px 0 14px;
+  height: 34px; border-radius: 999px; border: none; font-size: 13.5px; font-weight: 600;
+  background: rgba(var(--cs-accent-rgb), 0.14); color: var(--cs-accent);
+}
+.ng-case-root .ng-case-new:hover { background: rgba(var(--cs-accent-rgb), 0.22); }
+.ng-case-list { display: flex; flex-direction: column; gap: 2px; }
+.ng-case-root .ng-case-item {
+  display: grid; grid-template-columns: 1fr auto; gap: 1px 8px; text-align: left; width: 100%;
+  padding: 9px 10px; border: none; border-radius: 10px; corner-shape: squircle; background: transparent; color: var(--text-normal);
+}
+.ng-case-root .ng-case-item:hover { background: var(--cs-fill); }
+.ng-case-root .ng-case-item.is-active { background: var(--cs-accent); color: #fff; }
+.ng-case-item-code { grid-column: 1; font-size: 11.5px; color: var(--text-muted); }
+.ng-case-item.is-active .ng-case-item-code { color: rgba(255, 255, 255, 0.75); }
+.ng-case-item-title { grid-column: 1; font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ng-case-item-status { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--cs-fill); }
+.ng-case-item-status.st-0 { color: #30d158; }
+.ng-case-item-status.st-1 { color: #ff9f0a; }
+.ng-case-item-status.st-2 { color: #64b5ff; }
+.ng-case-item-status.st-3 { color: var(--text-muted); }
+.ng-case-item.is-active .ng-case-item-status { background: rgba(255, 255, 255, 0.22); color: #fff; }
+
+/* ---------- доска ---------- */
+.ng-case-main { flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden; padding: 28px 36px 90px; }
+.ng-case-main > * { max-width: 1060px; margin-left: auto; margin-right: auto; }
+.ng-case-head { margin-bottom: 20px; }
+.ng-case-meta { font-size: 13px; color: var(--text-muted); }
+.ng-case-root .ng-case-input {
+  width: 100%; padding: 4px 8px; font-size: 14px; color: var(--text-normal);
+  background: transparent; border: none; border-radius: 8px; box-shadow: none;
+}
+.ng-case-root .ng-case-input:hover { background: var(--cs-fill); }
+.ng-case-root .ng-case-input:focus { background: var(--cs-fill); box-shadow: 0 0 0 3px rgba(var(--cs-accent-rgb), 0.3); }
+.ng-case-root .ng-case-input::placeholder, .ng-case-root textarea::placeholder { color: var(--text-faint); }
+.ng-case-root .ng-case-title {
+  font-family: var(--cs-display); font-size: 34px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.15;
+  padding: 2px 6px; margin: 2px 0 4px -6px; height: auto;
+}
+.ng-case-root .ng-case-summary {
+  width: 100%; resize: vertical; margin: 2px 0 14px; padding: 10px 14px;
+  font-size: 15px; line-height: 1.5; color: var(--text-normal);
+  background: var(--cs-fill); border: none; border-radius: 14px; corner-shape: squircle; box-shadow: none;
+}
+.ng-case-root .ng-case-summary:focus { box-shadow: 0 0 0 3px rgba(var(--cs-accent-rgb), 0.3); outline: none; }
+.ng-case-head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ng-case-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.ng-case-stat { font-size: 12.5px; color: var(--text-muted); padding: 3px 10px; border-radius: 999px; background: var(--cs-fill); }
+.ng-case-stat b { color: var(--text-normal); font-weight: 600; }
+
+/* сегменты, как в iOS */
+.ng-case-chips { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border-radius: 10px; corner-shape: squircle; background: var(--cs-fill); }
+.ng-case-root .ng-case-chip {
+  border: none; border-radius: 8px; corner-shape: squircle; padding: 5px 12px;
+  background: transparent; color: var(--text-normal); font-size: 12.5px; font-weight: 500;
+}
+.ng-case-root .ng-case-chip:hover { background: var(--cs-fill); }
+.ng-case-root .ng-case-chip.is-on { background: var(--cs-raised); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18), 0 0 0 0.5px rgba(0, 0, 0, 0.06); }
+.ng-case-status .ng-case-chip.is-on[data-val="открыто"] { color: #30d158; }
+.ng-case-status .ng-case-chip.is-on[data-val="в работе"] { color: #ff9f0a; }
+.ng-case-status .ng-case-chip.is-on[data-val="на паузе"] { color: #64b5ff; }
+.ng-case-status .ng-case-chip.is-on[data-val="закрыто"] { color: var(--text-muted); }
+
+/* ---------- карта связей (всегда тёмная) ---------- */
+.ng-case-map { position: relative; height: 320px; overflow: hidden; background: #000; margin-bottom: 30px; border-radius: 22px; corner-shape: squircle; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 20px 50px -28px rgba(0, 0, 0, 0.7); }
+.ng-case-map canvas { display: block; }
+.ng-case-map-hint {
+  position: absolute; left: 14px; bottom: 12px; z-index: 2; pointer-events: none;
+  font-size: 12px; font-weight: 500; color: rgba(255, 255, 255, 0.85);
+  padding: 5px 12px; border-radius: 999px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+  -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- секции ---------- */
+.ng-case-sec { margin-bottom: 34px; }
+.ng-case-sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.ng-case-root .ng-case-sec-title { font-family: var(--cs-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; padding: 0; border: none; color: var(--text-normal); }
+.ng-case-sec-hint { font-size: 13px; color: var(--text-muted); }
+.ng-case-none { font-size: 13px; color: var(--text-muted); padding: 8px 2px; }
+
+/* ---------- карточки объектов ---------- */
+.ng-case-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.ng-case-card {
+  --ng-c: #8e8e93;
+  position: relative; padding: 12px; background: var(--cs-card);
+  border-radius: 18px; corner-shape: squircle;
+  box-shadow: 0 0 0 1px var(--cs-sep), 0 10px 30px -22px rgba(0, 0, 0, 0.6);
+  transition: box-shadow 0.3s ease;
+}
+.ng-case-card.is-flash { box-shadow: 0 0 0 2px var(--ng-c), 0 0 30px -6px var(--ng-c); }
+.ng-case-card-top { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
+.ng-case-card-icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 28px; height: 28px; border-radius: 8px; corner-shape: squircle;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--ng-c) 80%, #fff), var(--ng-c)); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.ng-case-card-icon svg { width: 15px; height: 15px; stroke-width: 2.2; }
+.ng-case-card-type { font-size: 13px; font-weight: 600; color: var(--text-muted); flex: 1; }
+.ng-case-root .ng-case-del {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; padding: 0; border: none; border-radius: 50%;
+  background: transparent; color: var(--text-faint); font-size: 16px; line-height: 1;
+}
+.ng-case-root .ng-case-del:hover { background: rgba(255, 69, 58, 0.14); color: #ff453a; }
+.ng-case-fields { display: flex; flex-direction: column; border-radius: 12px; corner-shape: squircle; background: var(--cs-fill); overflow: hidden; margin: 4px 0 8px; }
+.ng-case-field { display: grid; grid-template-columns: 104px 1fr; align-items: center; gap: 4px; padding: 0 4px 0 12px; min-height: 36px; }
+.ng-case-field + .ng-case-field { box-shadow: inset 0 1px 0 var(--cs-sep); }
+.ng-case-field-label { font-size: 12.5px; color: var(--text-muted); }
+.ng-case-field.is-main { grid-template-columns: 1fr; padding: 2px 4px; }
+.ng-case-field.is-main .ng-case-field-label { display: none; }
+.ng-case-root .ng-case-field.is-main .ng-case-input { font-family: var(--cs-display); font-size: 18px; font-weight: 650; letter-spacing: -0.01em; }
+.ng-case-root .ng-case-field .ng-case-input:hover { background: transparent; }
+.ng-case-root .ng-case-field .ng-case-input:focus { background: transparent; box-shadow: none; }
+.ng-case-root .ng-case-note {
+  width: 100%; resize: vertical; margin: 0 0 8px; padding: 8px 12px; font-size: 13px; color: var(--text-normal);
+  background: transparent; border: none; border-radius: 10px; box-shadow: 0 0 0 1px var(--cs-sep);
+}
+.ng-case-root .ng-case-note:focus { outline: none; box-shadow: 0 0 0 3px rgba(var(--cs-accent-rgb), 0.3); }
+.ng-case-card .ng-case-conf { display: flex; width: 100%; }
+.ng-case-root .ng-case-conf .ng-case-chip { flex: 1; font-size: 11.5px; padding: 4px 6px; }
+.ng-case-root .ng-case-conf .ng-case-chip.is-on[data-val="confirmed"] { color: #30d158; }
+.ng-case-root .ng-case-conf .ng-case-chip.is-on[data-val="likely"] { color: #ff9f0a; }
+.ng-case-root .ng-case-conf .ng-case-chip.is-on[data-val="unverified"] { color: var(--text-muted); }
+
+/* добавить объект */
+.ng-case-add { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 14px; }
+.ng-case-add-label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-right: 4px; }
+.ng-case-root .ng-case-add-type {
+  --ng-c: #8e8e93; display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 12px 0 5px; border: none; border-radius: 999px;
+  background: var(--cs-fill); color: var(--text-normal); font-size: 13px; font-weight: 500;
+}
+.ng-case-root .ng-case-add-type:hover { background: var(--cs-fill-2); }
+.ng-case-add-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ng-c); color: #fff; }
+.ng-case-add-icon svg { width: 13px; height: 13px; stroke-width: 2.4; }
+.ng-case-root .ng-case-addrow {
+  margin-top: 10px; height: 32px; padding: 0 14px; border: none; border-radius: 999px;
+  background: rgba(var(--cs-accent-rgb), 0.12); color: var(--cs-accent); font-size: 13px; font-weight: 600;
+}
+.ng-case-root .ng-case-addrow:hover { background: rgba(var(--cs-accent-rgb), 0.2); }
+
+/* ---------- связи ---------- */
+.ng-case-links { display: flex; flex-direction: column; border-radius: 16px; corner-shape: squircle; background: var(--cs-card); box-shadow: 0 0 0 1px var(--cs-sep); overflow: hidden; }
+.ng-case-links:has(.ng-case-none) { background: transparent; box-shadow: none; }
+.ng-case-link { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 10px; }
+.ng-case-link + .ng-case-link { box-shadow: inset 0 1px 0 var(--cs-sep); }
+.ng-case-link .ng-case-select { flex: 1 1 150px; min-width: 0; font-size: 13px; }
+.ng-case-root .ng-case-link .ng-case-link-label { flex: 2 1 180px; width: auto; min-width: 0; text-align: center; color: var(--text-muted); }
+.ng-case-arrow { color: var(--text-faint); }
+.ng-case-link .ng-case-conf { width: auto; flex: none; }
+
+/* ---------- хронология ---------- */
+.ng-case-timeline { position: relative; padding-left: 22px; }
+.ng-case-timeline::before { content: ""; position: absolute; left: 6px; top: 10px; bottom: 10px; width: 2px; border-radius: 2px; background: var(--cs-fill-2); }
+.ng-case-event { position: relative; display: grid; grid-template-columns: 150px 1fr auto; align-items: center; gap: 10px; padding: 4px 0; }
+.ng-case-event-dot { position: absolute; left: -21px; width: 12px; height: 12px; border-radius: 50%; background: var(--cs-accent); box-shadow: 0 0 0 3px var(--background-primary); }
+.ng-case-root .ng-case-date { font-size: 13px; font-weight: 600; color: var(--cs-accent); background: var(--cs-fill); }
+
+/* ---------- источники ---------- */
+.ng-case-sources { display: flex; flex-direction: column; gap: 10px; }
+.ng-case-source { display: grid; grid-template-columns: 56px 1fr auto; gap: 14px; align-items: start; padding: 12px; border-radius: 18px; corner-shape: squircle; background: var(--cs-card); box-shadow: 0 0 0 1px var(--cs-sep); }
+.ng-case-grade {
+  display: flex; align-items: center; justify-content: center; height: 56px;
+  font-family: var(--cs-display); font-size: 20px; font-weight: 700; letter-spacing: -0.02em;
+  border-radius: 14px; corner-shape: squircle; color: #fff; background: #8e8e93;
+}
+.ng-case-grade[data-rel="A"] { background: linear-gradient(160deg, #5ee08a, #1fb35a); }
+.ng-case-grade[data-rel="B"] { background: linear-gradient(160deg, #a8e06b, #6fb82f); }
+.ng-case-grade[data-rel="C"] { background: linear-gradient(160deg, #ffd36b, #ff9f0a); }
+.ng-case-grade[data-rel="D"] { background: linear-gradient(160deg, #ffb37a, #ff7a1a); }
+.ng-case-grade[data-rel="E"] { background: linear-gradient(160deg, #ff8a80, #ff3b30); }
+.ng-case-root .ng-case-source-title { font-size: 15px; font-weight: 600; }
+.ng-case-root .ng-case-source-url { font-size: 13px; color: var(--cs-accent); }
+.ng-case-scales { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; }
+.ng-case-scale-label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.ng-case-root .ng-case-scale .ng-case-chip { min-width: 28px; padding: 4px 8px; font-weight: 600; }
+
+/* ---------- пусто ---------- */
+.ng-case-main > .ng-case-empty { max-width: 460px; margin: 14vh auto 0; text-align: center; }
+.ng-case-empty-icon {
+  display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; margin-bottom: 14px;
+  border-radius: 18px; corner-shape: squircle; color: #fff;
+  background: linear-gradient(160deg, #ff9a8b, #ff2d55); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 10px 26px rgba(255, 45, 85, 0.35);
+}
+.ng-case-empty-icon svg { width: 32px; height: 32px; }
+.ng-case-empty-title { font-family: var(--cs-display); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+.ng-case-empty-text { color: var(--text-muted); line-height: 1.55; margin-bottom: 20px; font-size: 14.5px; }
+.ng-case-root .ng-case-cta, .ng-case-block .ng-case-cta {
+  height: 38px; padding: 0 20px; border: none; border-radius: 999px; cursor: pointer;
+  background: var(--cs-accent); color: #fff; font-family: var(--cs-font); font-size: 14px; font-weight: 600; box-shadow: none;
+}
+.ng-case-root .ng-case-cta:hover, .ng-case-block .ng-case-cta:hover { filter: brightness(1.1); }
+
+/* ---------- карточка дела внутри заметки ---------- */
+.ng-case-block { padding: 18px 20px; border-radius: 20px; corner-shape: squircle; background: var(--background-primary-alt); box-shadow: 0 0 0 1px var(--cs-sep), 0 12px 32px -24px rgba(0, 0, 0, 0.6); }
+.ng-case-block-meta { font-size: 13px; color: var(--text-muted); }
+.ng-case-block-title { font-family: var(--cs-display); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin: 2px 0 10px; }
+.ng-case-block-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.ng-case-block-types { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 16px; }
+.ng-case-block-chip { --ng-c: #8e8e93; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 3px 10px 3px 8px; border-radius: 999px; background: var(--cs-fill); }
+.ng-case-block-chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ng-c); }
+
+@media (max-width: 760px) {
+  .ng-case-side { display: none; }
+  .ng-case-main { padding: 18px; }
+  .ng-case-event { grid-template-columns: 1fr auto; }
+}
+
+/* круглые элементы остаются кругами */
+.ng-case-root .ng-case-del, .ng-case-add-icon, .ng-case-event-dot, .ng-case-root .ng-case-new, .ng-case-root .ng-case-add-type, .ng-case-root .ng-case-addrow, .ng-case-root .ng-case-cta, .ng-case-block .ng-case-cta, .ng-case-stat, .ng-case-item-status, .ng-case-block-chip, .ng-case-map-hint { corner-shape: round; }

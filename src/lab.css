@@ -1,0 +1,152 @@
+
+/* =========================================================
+   Стартовый экран Flora — нейроны-цветы под жидким стеклом
+   ========================================================= */
+.ng-lab-host .empty-state { display: none !important; }
+.ng-lab-host { position: relative; padding: 0 !important; overflow: hidden; }
+.ng-lab {
+  --lab-font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --lab-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  position: absolute; inset: 0; overflow: hidden;
+  background: #000;
+  font-family: var(--lab-font);
+  color: #fff;
+}
+.ng-lab-canvas { display: block; }
+
+/* мягкое «цветение» поверх клеток: тёплые и холодные пятна света */
+.ng-lab-bloom {
+  position: absolute; inset: -10%; pointer-events: none; z-index: 1;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(38% 34% at 18% 22%, rgba(255, 138, 112, 0.20), transparent 70%),
+    radial-gradient(34% 30% at 82% 18%, rgba(122, 184, 255, 0.18), transparent 70%),
+    radial-gradient(40% 36% at 78% 84%, rgba(229, 155, 224, 0.20), transparent 70%),
+    radial-gradient(36% 32% at 14% 86%, rgba(143, 227, 161, 0.16), transparent 70%),
+    radial-gradient(30% 26% at 50% 50%, rgba(242, 197, 107, 0.10), transparent 70%);
+}
+
+/* фирменный знак */
+.ng-lab-mark { position: absolute; z-index: 3; left: 28px; top: 22px; display: flex; align-items: center; gap: 9px; }
+.ng-lab-mark-flower {
+  width: 22px; height: 22px; border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #fff6d8 0 16%, transparent 17%),
+    radial-gradient(circle at 50% 16%, #ff8a70 0 24%, transparent 25%),
+    radial-gradient(circle at 80% 33%, #f2c56b 0 24%, transparent 25%),
+    radial-gradient(circle at 80% 67%, #8fe3a1 0 24%, transparent 25%),
+    radial-gradient(circle at 50% 84%, #7ab8ff 0 24%, transparent 25%),
+    radial-gradient(circle at 20% 67%, #e59be0 0 24%, transparent 25%),
+    radial-gradient(circle at 20% 33%, #ff6fa0 0 24%, transparent 25%);
+  filter: drop-shadow(0 0 6px rgba(255, 200, 220, 0.5));
+}
+.ng-lab-mark-word { font-family: var(--lab-display); font-size: 19px; font-weight: 650; letter-spacing: -0.02em; color: rgba(255, 255, 255, 0.92); }
+
+/* колонка по центру, как домашний экран */
+.ng-lab-inner {
+  position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(560px, calc(100% - 40px));
+  display: flex; flex-direction: column; align-items: stretch;
+}
+.ng-lab-date { text-align: center; font-size: 17px; font-weight: 600; color: rgba(255, 255, 255, 0.78); text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6); }
+.ng-lab .ng-lab-title {
+  text-align: center; font-family: var(--lab-display);
+  font-size: clamp(40px, 5vw, 64px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.02;
+  color: #fff; margin: 2px 0 26px; padding: 0; border: none;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.55);
+}
+
+/* ---------- жидкое стекло ---------- */
+.ng-lab .ng-glass {
+  position: relative; z-index: 0;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.07) 42%, rgba(255, 255, 255, 0.04) 100%);
+  -webkit-backdrop-filter: blur(26px) saturate(200%) brightness(1.06);
+  backdrop-filter: blur(26px) saturate(200%) brightness(1.06);
+  border: none;
+  corner-shape: squircle;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 50px rgba(0, 0, 0, 0.45);
+}
+/* блестящий ободок: ярче в верхнем левом углу */
+.ng-lab .ng-glass::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  border-radius: inherit; corner-shape: inherit; padding: 1px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.08) 30%, rgba(255, 255, 255, 0) 55%, rgba(255, 255, 255, 0.22) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+/* блик сверху */
+.ng-lab .ng-glass::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit; corner-shape: inherit;
+  background: radial-gradient(120% 60% at 30% -10%, rgba(255, 255, 255, 0.16), transparent 60%);
+}
+
+/* поиск-капсула */
+.ng-lab .ng-lab-search {
+  display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 16px 0 18px;
+  border-radius: 999px; cursor: pointer; color: rgba(255, 255, 255, 0.7); font-size: 16px; text-align: left;
+}
+.ng-lab .ng-lab-search:hover { color: #fff; }
+.ng-lab-search-icon { display: inline-flex; }
+.ng-lab-search-icon svg { width: 18px; height: 18px; stroke-width: 2.2; }
+.ng-lab-search-text { flex: 1; }
+.ng-lab .ng-lab-search-key { font-family: var(--lab-font); font-size: 12px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.75); border: none; box-shadow: none; }
+
+/* док с иконками-приложениями */
+.ng-lab-dock { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 14px; padding: 16px 12px 14px; border-radius: 34px; }
+.ng-lab .ng-lab-app {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; height: auto; padding: 4px 0;
+  background: transparent; border: none; box-shadow: none; cursor: pointer; color: #fff;
+}
+.ng-lab-app-icon {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 62px; height: 62px; border-radius: 17px; corner-shape: squircle;
+  background: linear-gradient(160deg, var(--from), var(--to));
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -2px 6px rgba(0, 0, 0, 0.18), 0 8px 18px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease;
+}
+.ng-lab-app-icon::after { /* глянец */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; corner-shape: inherit; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 48%);
+}
+.ng-lab-app-icon svg { width: 30px; height: 30px; stroke-width: 2; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2)); }
+.ng-lab .ng-lab-app:hover .ng-lab-app-icon { transform: translateY(-2px) scale(1.04); }
+.ng-lab .ng-lab-app:active .ng-lab-app-icon { transform: scale(0.94); }
+.ng-lab-app-label { font-size: 12.5px; font-weight: 500; color: rgba(255, 255, 255, 0.92); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5); white-space: nowrap; }
+
+/* виджет «Недавние» */
+.ng-lab-widget { margin-top: 14px; padding: 14px 8px 8px; border-radius: 26px; }
+.ng-lab-widget-title { font-size: 15px; font-weight: 650; padding: 0 12px 6px; color: #fff; }
+.ng-lab .ng-lab-row {
+  position: relative; display: flex; align-items: center; gap: 12px; width: 100%;
+  height: 52px; padding: 0 12px; text-align: left; cursor: pointer;
+  background: transparent; border: none; border-radius: 14px; corner-shape: squircle; box-shadow: none; color: #fff;
+}
+.ng-lab .ng-lab-row:hover { background: rgba(255, 255, 255, 0.09); }
+.ng-lab .ng-lab-row + .ng-lab-row::before { content: ""; position: absolute; top: 0; left: 56px; right: 12px; height: 1px; background: rgba(255, 255, 255, 0.1); }
+.ng-lab .ng-lab-row:hover::before, .ng-lab .ng-lab-row:hover + .ng-lab-row::before { opacity: 0; }
+.ng-lab-row-icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 32px; height: 32px; border-radius: 9px; corner-shape: squircle;
+  background: linear-gradient(160deg, var(--from), var(--to)); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.ng-lab-row-icon svg { width: 17px; height: 17px; }
+.ng-lab-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ng-lab-row-name { font-size: 14.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ng-lab-row-kind { font-size: 12px; color: rgba(255, 255, 255, 0.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ng-lab-row-chevron { display: inline-flex; color: rgba(255, 255, 255, 0.35); }
+.ng-lab-row-chevron svg { width: 16px; height: 16px; }
+.ng-lab-empty { padding: 12px; font-size: 13px; color: rgba(255, 255, 255, 0.6); }
+
+.ng-lab button:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.85); outline-offset: 2px; }
+@media (max-height: 640px) { .ng-lab-widget { display: none; } }
+@media (max-width: 560px) { .ng-lab-dock { grid-template-columns: repeat(3, 1fr); row-gap: 14px; } }
+@media (prefers-reduced-transparency: reduce) {
+  .ng-lab .ng-glass { background: rgba(40, 40, 44, 0.92); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+.ng-lab .ng-lab-search, .ng-lab-mark-flower, .ng-lab .ng-lab-search-key { corner-shape: round; }

@@ -1,0 +1,11 @@
+{
+  "name": "obsidian-flora",
+  "version": "5.2.3",
+  "description": "Flora — новый дизайн Obsidian и живые нейронные графы",
+  "private": true,
+  "scripts": {
+    "build": "node build.js"
+  },
+  "author": "Paranoia Dev",
+  "license": "MIT"
+}

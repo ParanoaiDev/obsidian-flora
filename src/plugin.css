@@ -1,0 +1,208 @@
+/* =========================================================
+   FLORA — элементы плагина (стиль Flora)
+   Нейроны, связи и импульсы рисует видеокарта; здесь — всё вокруг них.
+   ========================================================= */
+.ng-view, .ng-canvas, .ng-day {
+  --ng-font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --ng-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --ng-accent: var(--fl-accent, #0a84ff);
+  --ng-accent-rgb: var(--fl-accent-rgb, 10, 132, 255);
+}
+/* стекло поверх живой ткани (всегда тёмное) */
+.ng-glass-dark {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* =========================================================
+   Нейрограф
+   ========================================================= */
+.workspace-leaf-content[data-type="neural-graph"] .view-content.ng-view {
+  padding: 0; overflow: hidden; position: relative; background: #000;
+}
+.ng-wrap { position: absolute; inset: 0; }
+.ng-wrap canvas { display: block; }
+.ng-ctl {
+  position: absolute; top: 12px; right: 12px; z-index: 3;
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;
+  font-family: var(--ng-font);
+}
+.ng-ctl-group {
+  display: flex; gap: 2px; padding: 4px;
+  border-radius: 999px; corner-shape: squircle;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+  -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+.ng-ctl .ng-ctl-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 12px; border-radius: 999px; border: none; box-shadow: none;
+  background: transparent; color: rgba(235, 235, 245, 0.75);
+  font-family: var(--ng-font); font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.ng-ctl .ng-ctl-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.ng-ctl .ng-ctl-btn.is-on { background: rgb(var(--ng-accent-rgb)); color: #fff; }
+.ng-ctl .ng-ctl-btn:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.8); outline-offset: 1px; }
+.ng-ctl-ico { display: inline-flex; }
+.ng-ctl-ico svg { width: 15px; height: 15px; stroke-width: 2.2; }
+.ng-ctl-btn:not(:has(.ng-ctl-text)) { padding: 0 9px; }
+
+/* =========================================================
+   Холсты — карточки из тёмного стекла над живой тканью
+   ========================================================= */
+.ng-canvas:not(.ng-canvas-nogl) .canvas-background { display: none; }
+.ng-canvas > canvas.ng-canvas-gl { position: absolute; left: 0; top: 0; pointer-events: none; }
+.ng-canvas .canvas-node { --ng-c: rgba(235, 235, 245, 0.5); }
+.ng-canvas .canvas-node.is-themed { --ng-c: var(--canvas-color); }
+
+.ng-canvas .canvas-node-container {
+  /* текст в карточке всегда светлый: под холстом тёмный космос */
+  --text-normal: rgba(255, 255, 255, 0.92);
+  --text-muted: rgba(235, 235, 245, 0.62);
+  --text-faint: rgba(235, 235, 245, 0.34);
+  --background-primary: transparent;
+  --background-secondary: rgba(255, 255, 255, 0.06);
+  --code-background: rgba(255, 255, 255, 0.08);
+  --link-color: #64b5ff; --link-color-hover: #8ac8ff; --text-accent: #64b5ff;
+  --h1-color: #fff; --h2-color: #fff; --h3-color: #fff; --h4-color: #fff;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(28, 28, 32, 0.94);
+  border: 1px solid color-mix(in srgb, var(--ng-c) calc(16% + var(--ng-flash, 0) * 64%), rgba(255, 255, 255, 0.06));
+  border-radius: 14px; corner-shape: squircle;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 16px 40px -20px rgba(0, 0, 0, 0.9),
+    0 0 calc(var(--ng-flash, 0) * 28px) color-mix(in srgb, var(--ng-c) calc(var(--ng-flash, 0) * 60%), transparent);
+}
+.ng-canvas .canvas-node.is-themed .canvas-node-container { background: color-mix(in srgb, var(--ng-c) 10%, rgba(28, 28, 32, 0.95)); }
+.ng-canvas .canvas-node.is-focused .canvas-node-container,
+.ng-canvas .canvas-node.is-selected .canvas-node-container {
+  border-color: color-mix(in srgb, var(--ng-c) 70%, #fff 20%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 3px color-mix(in srgb, var(--ng-c) 35%, transparent), 0 16px 40px -20px rgba(0, 0, 0, 0.9);
+}
+/* группы — мягкая область с подписью-капсулой */
+.ng-canvas .canvas-node-group .canvas-node-container {
+  background: color-mix(in srgb, var(--ng-c) 6%, rgba(255, 255, 255, 0.02));
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  border: 1px solid color-mix(in srgb, var(--ng-c) 26%, rgba(255, 255, 255, 0.06));
+  border-radius: 28px;
+  box-shadow: none;
+}
+.ng-canvas .canvas-group-label,
+.ng-canvas .canvas-node-group.is-themed .canvas-group-label:not([contenteditable=true]) {
+  font-family: var(--ng-font); font-size: 1.05em; font-weight: 600; letter-spacing: 0;
+  color: #fff; padding: 4px 14px; border-radius: 999px;
+  background: color-mix(in srgb, var(--ng-c) 30%, rgba(30, 30, 34, 0.95));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.ng-canvas .canvas-node-label { font-family: var(--ng-font); font-size: 0.85em; font-weight: 500; color: rgba(235, 235, 245, 0.7); }
+/* связи рисует видеокарта; стрелки и подписи — в стиле */
+.ng-canvas .canvas-edges g { --ng-c: rgba(235, 235, 245, 0.8); }
+.ng-canvas .canvas-edges g.is-themed { --ng-c: var(--canvas-color); }
+.ng-canvas .canvas-edges polygon.canvas-path-end {
+  fill: color-mix(in srgb, var(--ng-c) 90%, transparent);
+  stroke: color-mix(in srgb, var(--ng-c) 90%, transparent);
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--ng-c) 70%, transparent)) drop-shadow(0 0 8px color-mix(in srgb, var(--ng-c) 35%, transparent));
+}
+.ng-canvas .canvas-edges g.is-focused polygon.canvas-path-end {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ng-c) 90%, transparent)) drop-shadow(0 0 14px color-mix(in srgb, var(--ng-c) 55%, transparent));
+}
+.ng-canvas .canvas-path-label {
+  font-family: var(--ng-font); font-weight: 500; color: #fff;
+  background: rgba(30, 30, 34, 0.94);
+  border: none; border-radius: 999px; padding: 4px 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.ng-canvas-nogl .canvas-edges path.canvas-display-path { stroke: color-mix(in srgb, var(--ng-c) 70%, transparent); }
+.ng-canvas .canvas-control-group,
+.ng-canvas .canvas-card-menu {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+  -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  border: none; border-radius: 16px; corner-shape: squircle;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+.ng-canvas .canvas-control-item, .ng-canvas .canvas-card-menu-button { color: rgba(235, 235, 245, 0.75); }
+.ng-canvas .canvas-control-item:hover, .ng-canvas .canvas-card-menu-button:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+
+/* =========================================================
+   Журнал дня — шапка ежедневной заметки
+   ========================================================= */
+.ng-daily:not(.ng-daily-named) .inline-title { display: none; }
+.ng-daily.ng-daily-named .inline-title { margin-top: 0.3em; }
+.ng-day { margin: 4px 0 1.8em; user-select: none; -webkit-user-select: none; font-family: var(--ng-font); }
+.ng-day-band {
+  position: relative; height: 240px; overflow: hidden; background: #000;
+  border-radius: 22px; corner-shape: squircle;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 20px 50px -28px rgba(0, 0, 0, 0.8);
+}
+.ng-day-band canvas { display: block; }
+.ng-day-band::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.5) 34%, rgba(0, 0, 0, 0) 60%);
+}
+.ng-day-title {
+  position: absolute; left: 26px; top: 24px; bottom: 20px; z-index: 2; max-width: 52%;
+  display: flex; flex-direction: column; pointer-events: none;
+}
+.ng-day-kicker { font-size: 15px; font-weight: 600; color: rgb(var(--ng-accent-rgb)); filter: brightness(1.25); }
+.ng-day-date {
+  font-family: var(--ng-display); font-size: clamp(34px, 4.6vw, 50px); font-weight: 700;
+  line-height: 1.02; letter-spacing: -0.03em; color: #fff; margin-top: 4px;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.6);
+}
+.ng-day-week { font-size: 14px; color: rgba(235, 235, 245, 0.62); margin-top: 6px; }
+.ng-day-stat { margin-top: auto; font-size: 13px; font-weight: 500; color: rgba(235, 235, 245, 0.7); }
+.ng-day-nav { position: absolute; right: 14px; top: 14px; z-index: 2; display: flex; gap: 8px; align-items: center; }
+.ng-day-seg, .ng-day .ng-day-nav button.ng-day-reset {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+  -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.ng-day-seg { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; }
+.ng-day .ng-day-nav button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 30px; min-width: 30px; padding: 0 10px; border-radius: 999px; border: none;
+  background: transparent; box-shadow: none; color: rgba(255, 255, 255, 0.85);
+  font-family: var(--ng-font); font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.ng-day .ng-day-seg button:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.ng-day .ng-day-seg button:disabled { opacity: 0.3; cursor: default; background: transparent; }
+.ng-day .ng-day-nav .ng-day-reset { height: 36px; min-width: 36px; padding: 0 11px; }
+.ng-day .ng-day-nav .ng-day-reset:hover { color: #fff; }
+.ng-day .ng-day-nav .ng-day-reset.is-armed { background: #ff453a; color: #fff; box-shadow: 0 6px 20px rgba(255, 69, 58, 0.45); }
+.ng-day .ng-day-reset.is-armed-text::after { content: attr(data-label); }
+.ng-day-ico { display: inline-flex; }
+.ng-day-ico svg { width: 16px; height: 16px; stroke-width: 2.2; }
+.ng-day .ng-day-nav button:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.85); outline-offset: 1px; }
+
+/* дни месяца — как в календаре iOS */
+.ng-day-month { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 14px 4px 0; }
+.ng-day-month-label { font-size: 13px; font-weight: 600; color: var(--text-normal); margin-right: 8px; }
+.ng-day .ng-day-dot {
+  width: 10px; height: 10px; min-height: 0; padding: 0; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--background-modifier-border, rgba(127, 127, 127, 0.25));
+  box-shadow: none; transition: transform 0.15s ease;
+}
+.ng-day .ng-day-dot.is-monday { margin-left: 8px; }
+.ng-day .ng-day-dot[data-level="1"] { background: rgba(var(--ng-accent-rgb), 0.35); }
+.ng-day .ng-day-dot[data-level="2"] { background: rgba(var(--ng-accent-rgb), 0.65); }
+.ng-day .ng-day-dot[data-level="3"] { background: rgb(var(--ng-accent-rgb)); box-shadow: 0 0 8px rgba(var(--ng-accent-rgb), 0.55); }
+.ng-day .ng-day-dot.is-today { outline: 2px solid #ff453a; outline-offset: 2px; }
+.ng-day .ng-day-dot.is-current { transform: scale(1.45); }
+.ng-day .ng-day-dot:hover { transform: scale(1.45); }
+
+/* пустая запись */
+.ng-day-start { display: flex; align-items: center; gap: 14px; margin-top: 18px; flex-wrap: wrap; }
+.ng-day .ng-day-start button {
+  height: 36px; padding: 0 18px; border-radius: 999px; border: none; cursor: pointer;
+  background: rgb(var(--ng-accent-rgb)); color: #fff; box-shadow: none;
+  font-family: var(--ng-font); font-size: 14px; font-weight: 600;
+}
+.ng-day .ng-day-start button:hover { filter: brightness(1.1); }
+.ng-day-start span { font-size: 13px; color: var(--text-muted); }
+
+/* круглые элементы остаются кругами (скин включает iOS-скругления для всех кнопок) */
+.ng-day .ng-day-dot, .ng-ctl .ng-ctl-btn, .ng-day .ng-day-nav button, .ng-day .ng-day-start button { corner-shape: round; }

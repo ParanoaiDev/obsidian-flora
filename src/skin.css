@@ -1,0 +1,434 @@
+
+/* =========================================================
+   FLORA — дизайн всего Obsidian
+   Стеклянная навигация плавает над мягким «цветением» фона,
+   текст лежит на сплошной карточке. Светлая и тёмная тема.
+   Включается классом body.ng-skin. Элементы самого плагина
+   (нейроны, журнал, доска дела, лаборатория) здесь не трогаются.
+   ========================================================= */
+
+/* ---------- палитра: тёмная ---------- */
+body.ng-skin.theme-dark {
+  --fl-bg: #000000;
+  --fl-surface: #1c1c1e;
+  --fl-elevated: #2c2c2e;
+  --fl-elevated-2: #3a3a3c;
+  --fl-label: #ffffff;
+  --fl-label-2: rgba(235, 235, 245, 0.62);
+  --fl-label-3: rgba(235, 235, 245, 0.32);
+  --fl-sep: rgba(84, 84, 88, 0.55);
+  --fl-fill: rgba(118, 118, 128, 0.24);
+  --fl-fill-2: rgba(118, 118, 128, 0.36);
+  --fl-group: rgba(118, 118, 128, 0.16);
+  --fl-glass: rgba(36, 36, 40, 0.56);
+  --fl-glass-strong: rgba(30, 30, 33, 0.8);
+  --fl-glass-edge: rgba(255, 255, 255, 0.1);
+  --fl-glass-hi: rgba(255, 255, 255, 0.09);
+  --fl-card-edge: rgba(255, 255, 255, 0.06);
+  --fl-float-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --fl-green: #30d158; --fl-red: #ff453a; --fl-orange: #ff9f0a; --fl-yellow: #ffd60a;
+  --fl-teal: #40c8e0; --fl-indigo: #5e5cf6; --fl-pink: #ff375f; --fl-purple: #bf5af2;
+  --fl-accent: #0a84ff; --fl-accent-rgb: 10, 132, 255;
+  /* подсветка кода — палитра Xcode */
+  --fl-code-keyword: #ff7ab2; --fl-code-string: #ff8170; --fl-code-type: #6bdfff;
+  --fl-code-function: #67b7a4; --fl-code-number: #d9c97c; --fl-code-comment: #7f8c98; --fl-code-property: #4eb0cc;
+}
+/* ---------- палитра: светлая ---------- */
+body.ng-skin.theme-light {
+  --fl-bg: #f2f2f7;
+  --fl-surface: #ffffff;
+  --fl-elevated: #ffffff;
+  --fl-elevated-2: #e5e5ea;
+  --fl-label: #000000;
+  --fl-label-2: rgba(60, 60, 67, 0.62);
+  --fl-label-3: rgba(60, 60, 67, 0.32);
+  --fl-sep: rgba(60, 60, 67, 0.16);
+  --fl-fill: rgba(118, 118, 128, 0.12);
+  --fl-fill-2: rgba(118, 118, 128, 0.2);
+  --fl-group: #ffffff;
+  --fl-glass: rgba(255, 255, 255, 0.58);
+  --fl-glass-strong: rgba(248, 248, 250, 0.84);
+  --fl-glass-edge: rgba(0, 0, 0, 0.06);
+  --fl-glass-hi: rgba(255, 255, 255, 0.95);
+  --fl-card-edge: rgba(0, 0, 0, 0.05);
+  --fl-float-shadow: 0 24px 60px rgba(0, 0, 0, 0.16);
+  --fl-green: #34c759; --fl-red: #ff3b30; --fl-orange: #ff9500; --fl-yellow: #ffcc00;
+  --fl-teal: #30b0c7; --fl-indigo: #5856d6; --fl-pink: #ff2d55; --fl-purple: #af52de;
+  --fl-accent: #007aff; --fl-accent-rgb: 0, 122, 255;
+  --fl-code-keyword: #ad3da4; --fl-code-string: #d12f1b; --fl-code-type: #0b4f79;
+  --fl-code-function: #326d74; --fl-code-number: #272ad8; --fl-code-comment: #707f8c; --fl-code-property: #3e8087;
+}
+/* ---------- акцент на выбор ---------- */
+body.ng-skin.theme-dark[data-flora-accent="green"]    { --fl-accent: #30d158; --fl-accent-rgb: 48, 209, 88; }
+body.ng-skin.theme-light[data-flora-accent="green"]   { --fl-accent: #248a3d; --fl-accent-rgb: 36, 138, 61; }
+body.ng-skin.theme-dark[data-flora-accent="orange"]   { --fl-accent: #ff9f0a; --fl-accent-rgb: 255, 159, 10; }
+body.ng-skin.theme-light[data-flora-accent="orange"]  { --fl-accent: #c93400; --fl-accent-rgb: 201, 52, 0; }
+body.ng-skin.theme-dark[data-flora-accent="pink"]     { --fl-accent: #ff375f; --fl-accent-rgb: 255, 55, 95; }
+body.ng-skin.theme-light[data-flora-accent="pink"]    { --fl-accent: #d30f45; --fl-accent-rgb: 211, 15, 69; }
+body.ng-skin.theme-dark[data-flora-accent="graphite"] { --fl-accent: #98989d; --fl-accent-rgb: 152, 152, 157; }
+body.ng-skin.theme-light[data-flora-accent="graphite"]{ --fl-accent: #636366; --fl-accent-rgb: 99, 99, 102; }
+
+/* ---------- переменные Obsidian ---------- */
+body.ng-skin {
+  --font-interface-theme: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-text-theme: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-monospace-theme: "Cascadia Code", "Cascadia Mono", Consolas, monospace;
+  --fl-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+
+  /* непрерывные скругления, как в iOS (где поддерживается) */
+  --corner-shape: squircle;
+  --button-corner-shape: squircle; --input-corner-shape: squircle; --menu-corner-shape: squircle;
+  --tab-corner-shape: squircle; --notice-corner-shape: squircle; --tooltip-corner-shape: squircle;
+  --tag-corner-shape: squircle; --hotkey-corner-shape: squircle; --search-input-corner-shape: squircle;
+  --metadata-property-corner-shape: squircle; --pill-corner-shape: squircle; --embed-actions-corner-shape: squircle;
+  --radius-s: 6px; --radius-m: 10px; --radius-l: 14px; --radius-xl: 22px;
+
+  --color-accent: var(--fl-accent);
+  --color-accent-1: rgba(var(--fl-accent-rgb), 0.85);
+  --color-accent-2: rgba(var(--fl-accent-rgb), 0.7);
+  --interactive-accent: var(--fl-accent);
+  --interactive-accent-hover: rgba(var(--fl-accent-rgb), 0.85);
+  --interactive-normal: var(--fl-fill);
+  --interactive-hover: var(--fl-fill-2);
+  --color-red: var(--fl-red); --color-orange: var(--fl-orange); --color-yellow: var(--fl-yellow);
+  --color-green: var(--fl-green); --color-cyan: var(--fl-teal); --color-blue: #0a84ff;
+  --color-purple: var(--fl-purple); --color-pink: var(--fl-pink);
+
+  --background-primary: var(--fl-surface);
+  --background-primary-alt: var(--fl-elevated);
+  --background-secondary: var(--fl-surface);
+  --background-secondary-alt: var(--fl-bg);
+  --background-modifier-border: var(--fl-sep);
+  --background-modifier-border-hover: var(--fl-fill-2);
+  --background-modifier-border-focus: var(--fl-accent);
+  --background-modifier-hover: var(--fl-fill);
+  --background-modifier-active-hover: rgba(var(--fl-accent-rgb), 0.16);
+  --background-modifier-form-field: var(--fl-fill);
+  --background-modifier-form-field-hover: var(--fl-fill-2);
+  --background-modifier-cover: rgba(0, 0, 0, 0.36);
+  --background-modifier-error: rgba(255, 69, 58, 0.2);
+  --background-modifier-success: rgba(48, 209, 88, 0.2);
+
+  --text-normal: var(--fl-label);
+  --text-muted: var(--fl-label-2);
+  --text-faint: var(--fl-label-3);
+  --text-accent: var(--fl-accent);
+  --text-accent-hover: rgba(var(--fl-accent-rgb), 0.8);
+  --text-on-accent: #ffffff;
+  --text-selection: rgba(var(--fl-accent-rgb), 0.3);
+  --text-highlight-bg: rgba(255, 214, 10, 0.38);
+  --text-error: var(--fl-red); --text-success: var(--fl-green); --text-warning: var(--fl-orange);
+  --icon-color: var(--fl-label-2); --icon-color-hover: var(--fl-label); --icon-color-active: var(--fl-accent);
+  --icon-color-focused: var(--fl-label); --icon-opacity: 1;
+
+  /* текст заметок */
+  --line-height-normal: 1.62;
+  --file-line-width: 720px;
+  --inline-title-font: var(--fl-display); --inline-title-size: 2.2em; --inline-title-weight: 700; --inline-title-color: var(--fl-label);
+  --h1-font: var(--fl-display); --h2-font: var(--fl-display);
+  --h1-size: 1.85em; --h2-size: 1.45em; --h3-size: 1.2em; --h4-size: 1.05em; --h5-size: 1em; --h6-size: 0.92em;
+  --h1-weight: 700; --h2-weight: 650; --h3-weight: 600; --h4-weight: 600; --h5-weight: 600; --h6-weight: 600;
+  --h1-color: var(--fl-label); --h2-color: var(--fl-label); --h3-color: var(--fl-label);
+  --h4-color: var(--fl-label); --h5-color: var(--fl-label-2); --h6-color: var(--fl-label-2);
+  --link-color: var(--fl-accent); --link-color-hover: var(--fl-accent); --link-decoration: none; --link-decoration-hover: underline;
+  --link-external-color: var(--fl-accent); --link-external-decoration: none;
+  --link-unresolved-color: var(--fl-accent); --link-unresolved-opacity: 0.55; --link-unresolved-decoration-style: dotted;
+  --tag-color: var(--fl-accent); --tag-background: rgba(var(--fl-accent-rgb), 0.14); --tag-background-hover: rgba(var(--fl-accent-rgb), 0.24);
+  --tag-border-width: 0; --tag-radius: 999px; --tag-padding-x: 0.6em; --tag-padding-y: 0.12em; --tag-size: 0.88em; --tag-weight: 500;
+  --code-background: var(--fl-fill); --code-normal: var(--fl-label); --code-radius: 8px; --code-size: 0.9em;
+  --code-keyword: var(--fl-code-keyword); --code-string: var(--fl-code-string); --code-tag: var(--fl-code-type);
+  --code-function: var(--fl-code-function); --code-value: var(--fl-code-number); --code-comment: var(--fl-code-comment);
+  --code-property: var(--fl-code-property); --code-important: var(--fl-orange); --code-operator: var(--fl-label-2); --code-punctuation: var(--fl-label-2);
+  --blockquote-border-color: var(--fl-accent); --blockquote-border-thickness: 3px; --blockquote-color: var(--fl-label-2);
+  --hr-color: var(--fl-sep);
+  --checkbox-radius: 50%; --checkbox-color: var(--fl-accent); --checkbox-color-hover: rgba(var(--fl-accent-rgb), 0.85);
+  --checkbox-border-color: var(--fl-label-3); --checkbox-border-color-hover: var(--fl-label-2); --checkbox-marker-color: #ffffff;
+  --callout-radius: 14px; --callout-border-width: 0px; --callout-padding: 12px 16px;
+  --table-border-color: var(--fl-sep); --table-header-background: var(--fl-fill); --table-header-color: var(--fl-label);
+  --table-header-weight: 600; --table-row-background-hover: var(--fl-fill);
+  --embed-border-start: 3px solid rgba(var(--fl-accent-rgb), 0.5); --embed-padding: 0 0 0 16px;
+
+  /* элементы управления */
+  --button-radius: 999px;
+  --button-secondary-bg-color: var(--fl-fill); --button-secondary-fg-color: var(--fl-label); --button-secondary-border-color: transparent;
+  --button-secondary-hover-bg-color: var(--fl-fill-2); --button-secondary-hover-fg-color: var(--fl-label); --button-secondary-hover-border-color: transparent;
+  --button-secondary-active-bg-color: var(--fl-fill-2); --button-secondary-active-border-color: transparent;
+  --button-primary-bg-color: var(--fl-accent); --button-primary-fg-color: #ffffff; --button-primary-border-color: transparent;
+  --button-primary-hover-bg-color: rgba(var(--fl-accent-rgb), 0.86); --button-primary-hover-fg-color: #ffffff; --button-primary-hover-border-color: transparent;
+  --button-primary-active-bg-color: rgba(var(--fl-accent-rgb), 0.75); --button-primary-active-border-color: transparent;
+  --input-text-bg-color: var(--fl-fill); --input-text-fg-color: var(--fl-label);
+  --input-radius: 10px; --input-border-width: 0px; --input-border-width-focus: 0px;
+  --input-unfocused-border-color: transparent; --input-hover-border-color: transparent; --input-focus-border-color: transparent;
+  --input-focus-outline: 0 0 0 3px rgba(var(--fl-accent-rgb), 0.35);
+  --input-placeholder-color: var(--fl-label-3);
+  --input-shadow: none; --input-shadow-hover: none;
+  --search-input-radius: 10px;
+  --toggle-width: 44px; --toggle-radius: 999px; --toggle-border-width: 2px;
+  --toggle-thumb-height: 22px; --toggle-thumb-width: 22px; --toggle-thumb-radius: 999px; --toggle-thumb-color: #ffffff;
+  --toggle-s-width: 36px; --toggle-s-thumb-height: 17px; --toggle-s-thumb-width: 17px; --toggle-s-border-width: 2px;
+  --slider-track-background: var(--fl-fill-2); --slider-track-height: 4px;
+  --slider-thumb-background: #ffffff; --slider-thumb-background-hover: #ffffff; --slider-thumb-border-width: 0px;
+  --slider-thumb-height: 22px; --slider-thumb-width: 22px; --slider-thumb-radius: 999px; --slider-thumb-y: -9px;
+  --slider-thumb-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --pill-radius: 999px; --pill-background: var(--fl-fill); --pill-border-width: 0px; --pill-color: var(--fl-label);
+  --swatch-radius: 50%;
+  --scrollbar-bg: transparent; --scrollbar-thumb-bg: var(--fl-fill-2); --scrollbar-active-thumb-bg: var(--fl-label-3);
+  --scrollbar-radius: 999px; --scrollbar-border-width: 3px;
+
+  /* окна, меню, подсказки */
+  --modal-background: var(--fl-glass-strong); --modal-radius: 26px; --modal-border-width: 1px; --modal-border-color: var(--fl-glass-edge);
+  --modal-shadow: var(--fl-float-shadow); --modal-sidebar-background: transparent;
+  --dialog-bg-color: var(--fl-glass-strong); --dialog-border-color: var(--fl-glass-edge); --dialog-shadow: var(--fl-float-shadow);
+  --prompt-background: var(--fl-glass-strong); --prompt-backdrop-filter: blur(40px) saturate(180%);
+  --prompt-border-color: var(--fl-glass-edge); --prompt-border-width: 1px;
+  --menu-background: var(--fl-glass-strong); --menu-backdrop-filter: blur(36px) saturate(180%);
+  --menu-radius: 14px; --menu-border-color: var(--fl-glass-edge); --menu-border-width: 1px; --menu-padding: 6px;
+  --menu-shadow: var(--fl-float-shadow); --menu-divider-color: var(--fl-sep);
+  --tooltip-background: var(--fl-elevated-2); --tooltip-color: var(--fl-label); --tooltip-radius: 8px; --tooltip-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  --setting-items-background: var(--fl-group); --setting-items-radius: 12px; --setting-items-border-width: 0px;
+  --setting-items-divider-color: var(--fl-sep);
+  --metadata-background: transparent; --metadata-border-width: 0px; --metadata-border-radius: 12px;
+  --metadata-property-radius: 8px; --metadata-property-background-hover: var(--fl-fill);
+  --metadata-label-text-color: var(--fl-label-2); --metadata-divider-color: transparent;
+
+  /* навигация */
+  --nav-item-radius: 8px;
+  --nav-item-color: var(--fl-label); --nav-item-color-hover: var(--fl-label); --nav-item-color-active: var(--fl-label);
+  --nav-item-background-hover: var(--fl-fill);
+  --nav-item-background-active: rgba(var(--fl-accent-rgb), 0.2);
+  --nav-item-background-selected: rgba(var(--fl-accent-rgb), 0.3);
+  --nav-item-weight-active: 600;
+  --nav-indentation-guide-color: var(--fl-sep);
+  --nav-collapse-icon-color: var(--fl-label-3); --nav-collapse-icon-color-collapsed: var(--fl-label-3);
+  --nav-heading-color: var(--fl-label); --nav-heading-weight: 600;
+  --nav-tag-background: var(--fl-fill); --nav-tag-radius: 6px; --nav-tag-color: var(--fl-label-2);
+  --vault-profile-radius: 10px;
+  --ribbon-background: transparent; --ribbon-background-collapsed: transparent;
+  --titlebar-background: transparent; --titlebar-background-focused: transparent; --titlebar-border-width: 0px;
+  --sidebar-tab-container-background: transparent;
+  --tab-container-background: transparent;
+  --tab-background-active: var(--fl-glass-strong);
+  --tab-text-color: var(--fl-label-2); --tab-text-color-focused: var(--fl-label-2);
+  --tab-text-color-active: var(--fl-label); --tab-text-color-focused-active: var(--fl-label); --tab-text-color-focused-active-current: var(--fl-label);
+  --tab-font-size: 13px; --tab-font-weight: 500;
+  --tab-radius: 10px; --tab-radius-active: 10px; --tab-curve: 0px;
+  --tab-divider-color: transparent; --tab-outline-color: transparent; --tab-outline-width: 0px;
+  --status-bar-background: var(--fl-glass); --status-bar-border-color: var(--fl-glass-edge); --status-bar-border-width: 1px;
+  --status-bar-radius: 999px; --status-bar-text-color: var(--fl-label-2); --status-bar-font-size: 12px;
+  --divider-color: transparent;
+
+  /* обычный граф и холст Obsidian (когда скины плагина выключены) */
+  --graph-node: var(--fl-label-2); --graph-node-unresolved: var(--fl-label-3); --graph-node-focused: var(--fl-accent);
+  --graph-node-tag: var(--fl-orange); --graph-node-attachment: var(--fl-green); --graph-line: var(--fl-sep); --graph-text: var(--fl-label-2);
+  --canvas-background: var(--fl-surface); --canvas-dot-pattern: var(--fl-fill-2);
+  --canvas-color-1: var(--fl-red); --canvas-color-2: var(--fl-orange); --canvas-color-3: var(--fl-yellow);
+  --canvas-color-4: var(--fl-green); --canvas-color-5: var(--fl-teal); --canvas-color-6: var(--fl-purple);
+
+  /* мягкое «цветение» под стеклом */
+  --fl-wall:
+    radial-gradient(70% 60% at 8% -10%, rgba(var(--fl-accent-rgb), 0.22), transparent 70%),
+    radial-gradient(55% 55% at 105% 110%, rgba(var(--fl-accent-rgb), 0.12), transparent 70%),
+    var(--fl-bg);
+  color-scheme: dark;
+}
+body.ng-skin.theme-light { color-scheme: light; }
+
+/* =========================================================
+   Каркас: фон, стеклянные панели, карточка текста
+   ========================================================= */
+body.ng-skin .app-container { background: var(--fl-wall); }
+body.ng-skin .horizontal-main-container,
+body.ng-skin .workspace { background: transparent; }
+
+/* лента иконок — стеклянная капсула */
+body.ng-skin .workspace-ribbon.mod-left { background: transparent; border: none; }
+body.ng-skin .workspace-ribbon.mod-left .side-dock-actions,
+body.ng-skin .workspace-ribbon.mod-left .side-dock-settings {
+  margin: 0 0 8px;
+  padding: 6px 0;
+  border-radius: 14px;
+  corner-shape: squircle;
+  background: var(--fl-glass);
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
+  backdrop-filter: blur(30px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--fl-glass-hi), 0 0 0 1px var(--fl-glass-edge);
+}
+body.ng-skin .side-dock-ribbon-action { border-radius: 10px; color: var(--fl-label-2); }
+body.ng-skin .side-dock-ribbon-action:hover { background: var(--fl-fill); color: var(--fl-label); }
+
+/* боковые панели — стеклянные карточки с отступом от краёв */
+body.ng-skin .workspace-split.mod-sidedock { background: transparent; }
+body.ng-skin .workspace-split.mod-sidedock > .workspace-tabs {
+  margin: 8px;
+  width: auto;
+  min-width: 0;
+  border-radius: 22px;
+  corner-shape: squircle;
+  overflow: hidden;
+  background: var(--fl-glass);
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
+  backdrop-filter: blur(30px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--fl-glass-hi), 0 0 0 1px var(--fl-glass-edge);
+}
+body.ng-skin .workspace-split.mod-sidedock .workspace-tab-header-container,
+body.ng-skin .workspace-split.mod-sidedock .workspace-tab-container,
+body.ng-skin .workspace-split.mod-sidedock .workspace-leaf,
+body.ng-skin .workspace-split.mod-sidedock .workspace-leaf-content,
+body.ng-skin .workspace-split.mod-sidedock .view-content,
+body.ng-skin .workspace-split.mod-sidedock .nav-header { background: transparent; }
+body.ng-skin .workspace-leaf-resize-handle { border-color: transparent; }
+
+/* основная область — сплошная карточка с текстом */
+body.ng-skin .workspace-split.mod-root { background: transparent; }
+body.ng-skin .workspace-split.mod-root .workspace-tab-container { background: transparent; padding: 0 10px 10px; }
+body.ng-skin .workspace-split.mod-root .workspace-leaf {
+  border-radius: 18px;
+  corner-shape: squircle;
+  overflow: hidden;
+  background: var(--fl-surface);
+  box-shadow: 0 0 0 1px var(--fl-card-edge);
+}
+body.ng-skin .workspace-split.mod-root .workspace-leaf-content { background: var(--fl-surface); }
+
+/* вкладки — капсулы */
+body.ng-skin .workspace-tab-header-container { background: transparent; border-bottom: none; }
+body.ng-skin .workspace-tab-header { border-radius: 10px; corner-shape: squircle; }
+body.ng-skin .workspace-tab-header::before,
+body.ng-skin .workspace-tab-header::after { display: none; }
+body.ng-skin .workspace-tab-header:not(.is-active):hover { background: var(--fl-fill); }
+body.ng-skin .workspace-tab-header.is-active {
+  background: var(--tab-background-active);
+  box-shadow: inset 0 1px 0 var(--fl-glass-hi), 0 0 0 1px var(--fl-glass-edge);
+}
+body.ng-skin .mod-root .workspace-tab-header.is-active .workspace-tab-header-inner-title { font-weight: 600; }
+body.ng-skin .workspace-tab-header-new-tab .clickable-icon,
+body.ng-skin .workspace-tab-header-tab-list .clickable-icon { border-radius: 999px; }
+
+/* заголовок вида */
+body.ng-skin .view-header { background: transparent; border-bottom: none; }
+body.ng-skin .view-header-title { font-weight: 600; color: var(--fl-label); }
+body.ng-skin .view-header-breadcrumb { color: var(--fl-label-2); }
+body.ng-skin .clickable-icon { border-radius: 8px; }
+
+/* строка состояния — плавающая стеклянная капсула */
+body.ng-skin .status-bar {
+  bottom: 18px;
+  inset-inline-end: 22px;
+  padding: 3px 12px;
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  backdrop-filter: blur(24px) saturate(170%);
+  box-shadow: inset 0 1px 0 var(--fl-glass-hi);
+}
+
+/* =========================================================
+   Окна, палитра команд, меню, уведомления
+   ========================================================= */
+body.ng-skin .modal-bg { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+body.ng-skin .modal {
+  corner-shape: squircle;
+  -webkit-backdrop-filter: blur(44px) saturate(180%);
+  backdrop-filter: blur(44px) saturate(180%);
+  box-shadow: inset 0 1px 0 var(--fl-glass-hi), var(--fl-float-shadow);
+}
+body.ng-skin .modal-title { font-family: var(--fl-display); font-weight: 700; letter-spacing: -0.01em; }
+body.ng-skin .modal-close-button { border-radius: 999px; }
+body.ng-skin .vertical-tab-header { background: transparent; border-right: 1px solid var(--fl-sep); }
+body.ng-skin .vertical-tab-header-group-title { font-size: 12px; font-weight: 600; color: var(--fl-label-3); letter-spacing: 0; text-transform: none; }
+body.ng-skin .vertical-tab-nav-item { border-radius: 8px; corner-shape: squircle; color: var(--fl-label); }
+body.ng-skin .vertical-tab-nav-item.is-active,
+body.ng-skin .vertical-tab-nav-item.is-active:hover { background: var(--fl-accent); color: #ffffff; }
+body.ng-skin .vertical-tab-nav-item.is-active .vertical-tab-nav-item-chevron,
+body.ng-skin .vertical-tab-nav-item.is-active .vertical-tab-nav-item-icon { color: #ffffff; }
+body.ng-skin .vertical-tab-content { background: transparent; }
+body.ng-skin .setting-item-heading .setting-item-name { font-family: var(--fl-display); font-size: 1.12em; font-weight: 650; }
+body.ng-skin .setting-item-description { color: var(--fl-label-2); }
+body.ng-skin .checkbox-container { background-color: var(--fl-fill-2); }
+body.ng-skin .checkbox-container.is-enabled { background-color: var(--fl-green); }
+
+/* палитра команд и быстрый переход — как поиск в iOS */
+body.ng-skin .prompt { border-radius: 22px; corner-shape: squircle; box-shadow: inset 0 1px 0 var(--fl-glass-hi), var(--fl-float-shadow); }
+body.ng-skin .prompt-input-container { border-bottom: 1px solid var(--fl-sep); }
+body.ng-skin .prompt-input { font-size: 19px; font-weight: 500; background: transparent; box-shadow: none; }
+body.ng-skin .prompt-input:focus { box-shadow: none; }
+body.ng-skin .suggestion-item { border-radius: 10px; corner-shape: squircle; }
+body.ng-skin .suggestion-item.is-selected { background: var(--fl-accent); color: #ffffff; }
+body.ng-skin .suggestion-item.is-selected .suggestion-note,
+body.ng-skin .suggestion-item.is-selected .suggestion-flair,
+body.ng-skin .suggestion-item.is-selected .suggestion-aux,
+body.ng-skin .suggestion-item.is-selected .suggestion-highlight { color: #ffffff; }
+body.ng-skin .suggestion-highlight { color: var(--fl-accent); font-weight: 600; }
+body.ng-skin .suggestion-hotkey kbd, body.ng-skin kbd { border-radius: 6px; background: var(--fl-fill); color: var(--fl-label-2); }
+body.ng-skin .suggestion-item.is-selected kbd { background: rgba(255, 255, 255, 0.22); color: #ffffff; }
+body.ng-skin .prompt-instructions { color: var(--fl-label-3); }
+body.ng-skin .suggestion-container {
+  border-radius: 14px; corner-shape: squircle;
+  background: var(--fl-glass-strong); -webkit-backdrop-filter: blur(36px) saturate(180%); backdrop-filter: blur(36px) saturate(180%);
+  border: 1px solid var(--fl-glass-edge); box-shadow: var(--fl-float-shadow);
+}
+
+/* меню: выделение акцентом */
+body.ng-skin .menu-item { border-radius: 8px; corner-shape: squircle; }
+body.ng-skin .menu-item.selected:not(.is-disabled):not(.is-label) { background: var(--fl-accent); color: #ffffff; }
+body.ng-skin .menu-item.selected:not(.is-disabled):not(.is-label) .menu-item-icon { color: #ffffff; }
+body.ng-skin .menu-item.is-warning.selected:not(.is-disabled) { background: var(--fl-red); color: #ffffff; }
+
+/* уведомления — стеклянные баннеры */
+body.ng-skin .notice {
+  border-radius: 16px; corner-shape: squircle;
+  background: var(--fl-glass-strong); color: var(--fl-label);
+  -webkit-backdrop-filter: blur(36px) saturate(180%); backdrop-filter: blur(36px) saturate(180%);
+  border: 1px solid var(--fl-glass-edge);
+  box-shadow: inset 0 1px 0 var(--fl-glass-hi), var(--fl-float-shadow);
+}
+body.ng-skin .popover.hover-popover {
+  border-radius: 18px; corner-shape: squircle; overflow: hidden;
+  border: 1px solid var(--fl-glass-edge); box-shadow: var(--fl-float-shadow);
+}
+
+/* =========================================================
+   Файлы, поиск, свойства
+   ========================================================= */
+body.ng-skin .nav-folder-title, body.ng-skin .nav-file-title { corner-shape: squircle; }
+body.ng-skin .nav-file-title.is-active, body.ng-skin .tree-item-self.is-active { color: var(--fl-label); }
+body.ng-skin .nav-header { border-bottom: none; }
+body.ng-skin .search-input-container input { background: var(--fl-fill); }
+body.ng-skin .search-result-file-title { font-weight: 600; }
+body.ng-skin .search-result-file-match { border-radius: 8px; corner-shape: squircle; }
+body.ng-skin .search-result-file-matched-text { background: rgba(255, 214, 10, 0.38); color: inherit; border-radius: 3px; }
+body.ng-skin .metadata-container { background: var(--fl-fill); border-radius: 14px; corner-shape: squircle; padding: 8px 12px; }
+
+/* =========================================================
+   Текст заметок
+   ========================================================= */
+body.ng-skin .inline-title,
+body.ng-skin .markdown-rendered h1, body.ng-skin .HyperMD-header-1,
+body.ng-skin .markdown-rendered h2, body.ng-skin .HyperMD-header-2 { letter-spacing: -0.02em; }
+body.ng-skin .markdown-rendered a:hover, body.ng-skin .cm-s-obsidian span.cm-hmd-internal-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+body.ng-skin .markdown-rendered pre, body.ng-skin .HyperMD-codeblock-begin, body.ng-skin .markdown-rendered .callout { corner-shape: squircle; }
+body.ng-skin .markdown-rendered pre { border-radius: 12px; }
+body.ng-skin .markdown-rendered table { border-radius: 12px; corner-shape: squircle; overflow: hidden; border-collapse: separate; border-spacing: 0; box-shadow: 0 0 0 1px var(--fl-sep); }
+body.ng-skin .markdown-rendered th, body.ng-skin .markdown-rendered td { border: none; border-bottom: 1px solid var(--fl-sep); }
+body.ng-skin .markdown-rendered tr:last-child td { border-bottom: none; }
+body.ng-skin .markdown-rendered blockquote { border-radius: 2px; }
+body.ng-skin .markdown-rendered img:not(.emoji) { border-radius: 12px; corner-shape: squircle; }
+body.ng-skin .markdown-rendered .task-list-item.is-checked, body.ng-skin .HyperMD-task-line[data-task="x"] { color: var(--fl-label-3); }
+body.ng-skin .markdown-rendered .task-list-item.is-checked { text-decoration: none; }
+
+/* граф и холст Obsidian без скинов плагина */
+body.ng-skin .graph-controls {
+  border-radius: 18px; corner-shape: squircle;
+  background: var(--fl-glass-strong); -webkit-backdrop-filter: blur(36px) saturate(180%); backdrop-filter: blur(36px) saturate(180%);
+  border: 1px solid var(--fl-glass-edge); box-shadow: var(--fl-float-shadow);
+}
+body.ng-skin .canvas-wrapper:not(.ng-canvas) .canvas-control-group,
+body.ng-skin .canvas-wrapper:not(.ng-canvas) .canvas-card-menu {
+  border-radius: 14px; corner-shape: squircle;
+  background: var(--fl-glass-strong); -webkit-backdrop-filter: blur(36px) saturate(180%); backdrop-filter: blur(36px) saturate(180%);
+  border: 1px solid var(--fl-glass-edge); box-shadow: var(--fl-float-shadow);
+}
+
+/* фокус с клавиатуры виден всегда */
+body.ng-skin :focus-visible { outline: 2px solid rgba(var(--fl-accent-rgb), 0.7); outline-offset: 1px; }
+@media (prefers-reduced-transparency: reduce) {
+  body.ng-skin { --fl-glass: var(--fl-elevated); --fl-glass-strong: var(--fl-elevated); }
+}
