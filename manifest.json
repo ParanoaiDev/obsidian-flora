@@ -1,9 +1,9 @@
 {
   "id": "flora",
   "name": "Flora",
-  "version": "5.2.3",
+  "version": "5.3.0",
   "minAppVersion": "1.4.0",
-  "description": "Новый дизайн всего Obsidian (стекло, мягкий фон, светлая и тёмная тема) и живые нейронные графы: обычный граф, холсты, журнал дня, стартовый экран и доска расследований.",
+  "description": "A new look for all of Obsidian and living neural graphs: the graph view, canvases, a daily journal, a start screen and an investigation board.",
   "author": "Paranoia Dev",
   "isDesktopOnly": false
 }

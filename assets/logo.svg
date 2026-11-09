@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>Flora</title>
+  <defs>
+    <linearGradient id="pBlue" x1="0" y1="1" x2="0" y2="0"><stop offset="0.1" stop-color="#0a63ff"/><stop offset="1" stop-color="#7fd6ff"/></linearGradient>
+    <linearGradient id="pGold" x1="0" y1="1" x2="0" y2="0"><stop offset="0.1" stop-color="#ff8a00"/><stop offset="1" stop-color="#ffdf8a"/></linearGradient>
+    <linearGradient id="pViolet" x1="0" y1="1" x2="0" y2="0"><stop offset="0.1" stop-color="#8a2cff"/><stop offset="1" stop-color="#ebbcff"/></linearGradient>
+    <linearGradient id="pRose" x1="0" y1="1" x2="0" y2="0"><stop offset="0.1" stop-color="#ff2d55"/><stop offset="1" stop-color="#ffb0a3"/></linearGradient>
+    <linearGradient id="pMint" x1="0" y1="1" x2="0" y2="0"><stop offset="0.1" stop-color="#12a650"/><stop offset="1" stop-color="#a6f5bb"/></linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="0.35" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <!-- petal: a wide drop from the centre outwards; neighbours overlap like glass -->
+    <path id="petal" d="M128 134 C 94 118, 78 66, 108 34 Q 128 14, 148 34 C 178 66, 162 118, 128 134 Z"/>
+    <path id="vein" d="M128 116 C 125 92, 125 64, 128 38" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2.4" stroke-linecap="round"/>
+  </defs>
+  <g transform="translate(0 10)">
+  <g opacity="0.82">
+    <g transform="rotate(0 128 128)"><use href="#petal" fill="url(#pBlue)"/><use href="#vein"/></g>
+    <g transform="rotate(72 128 128)"><use href="#petal" fill="url(#pGold)"/><use href="#vein"/></g>
+    <g transform="rotate(144 128 128)"><use href="#petal" fill="url(#pViolet)"/><use href="#vein"/></g>
+    <g transform="rotate(216 128 128)"><use href="#petal" fill="url(#pRose)"/><use href="#vein"/></g>
+    <g transform="rotate(288 128 128)"><use href="#petal" fill="url(#pMint)"/><use href="#vein"/></g>
+  </g>
+  <circle cx="128" cy="128" r="40" fill="url(#halo)"/>
+  <circle cx="128" cy="128" r="11" fill="#ffffff"/>
+  </g>
+</svg>

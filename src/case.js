@@ -6,34 +6,57 @@
 /* «Расследования»: машинный блок ```ng-case``` + читаемая сводка.      */
 /* ------------------------------------------------------------------ */
 const CASE_VIEW = "ng-case-view";
-const CASE_FOLDER = "Расследования";
-const ENTITY_TYPES = {
-  person:  { label: "Человек",     icon: "user",        glyph: "◉", color: "#8fe3a1", fields: [["fio", "ФИО"], ["alias", "Псевдонимы"], ["born", "Дата рождения"], ["city", "Город"], ["role", "Роль в деле"]] },
-  org:     { label: "Организация", icon: "building-2",  glyph: "▣", color: "#7ab8ff", fields: [["name", "Название"], ["reg", "Рег. номер"], ["country", "Страна"], ["site", "Сайт"]] },
-  account: { label: "Аккаунт",     icon: "at-sign",     glyph: "@", color: "#e59be0", fields: [["platform", "Платформа"], ["handle", "Ник"], ["url", "Ссылка"], ["uid", "ID"]] },
-  email:   { label: "Почта",       icon: "mail",        glyph: "✉", color: "#f2c56b", fields: [["addr", "Адрес"], ["provider", "Сервис"]] },
-  phone:   { label: "Телефон",     icon: "phone",       glyph: "☏", color: "#ff8a70", fields: [["num", "Номер"], ["carrier", "Оператор"], ["region", "Регион"]] },
-  domain:  { label: "Домен",       icon: "globe",       glyph: "◎", color: "#9fe6dc", fields: [["host", "Домен"], ["registrar", "Регистратор"], ["created", "Создан"]] },
-  ip:      { label: "IP / сервер", icon: "server",      glyph: "▤", color: "#c6e07a", fields: [["ip", "Адрес"], ["asn", "ASN"], ["geo", "Гео"]] },
-  place:   { label: "Место",       icon: "map-pin",     glyph: "⌖", color: "#d9b38c", fields: [["addr", "Адрес"], ["coords", "Координаты"]] },
-  vehicle: { label: "Транспорт",   icon: "car",         glyph: "▶", color: "#a7b4c8", fields: [["model", "Модель"], ["plate", "Номер"], ["color", "Цвет"]] },
-  doc:     { label: "Документ",    icon: "file-text",   glyph: "▦", color: "#d8d2c4", fields: [["kind", "Вид"], ["num", "Номер"], ["date", "Дата"]] },
-};
-const CONF = [["confirmed", "подтверждено"], ["likely", "вероятно"], ["unverified", "не проверено"]];
-const CASE_STATUS = ["открыто", "в работе", "на паузе", "закрыто"];
+// папка для новых дел; сами дела находятся по свойству ng-case в любой папке (и в «Расследования», и в «Investigations»)
+function caseFolder() { return L("Расследования", "Investigations"); }
+const caseTypes = floraLazy(() => ({
+  person:  { label: L("Человек", "Person"),          icon: "user",        glyph: "◉", color: "#8fe3a1", fields: [["fio", L("ФИО", "Full name")], ["alias", L("Псевдонимы", "Aliases")], ["born", L("Дата рождения", "Date of birth")], ["city", L("Город", "City")], ["role", L("Роль в деле", "Role in the case")]] },
+  org:     { label: L("Организация", "Organization"), icon: "building-2",  glyph: "▣", color: "#7ab8ff", fields: [["name", L("Название", "Name")], ["reg", L("Рег. номер", "Registration number")], ["country", L("Страна", "Country")], ["site", L("Сайт", "Website")]] },
+  account: { label: L("Аккаунт", "Account"),          icon: "at-sign",     glyph: "@", color: "#e59be0", fields: [["platform", L("Платформа", "Platform")], ["handle", L("Ник", "Username")], ["url", L("Ссылка", "Link")], ["uid", "ID"]] },
+  email:   { label: L("Почта", "Email"),              icon: "mail",        glyph: "✉", color: "#f2c56b", fields: [["addr", L("Адрес", "Address")], ["provider", L("Сервис", "Provider")]] },
+  phone:   { label: L("Телефон", "Phone"),            icon: "phone",       glyph: "☏", color: "#ff8a70", fields: [["num", L("Номер", "Number")], ["carrier", L("Оператор", "Carrier")], ["region", L("Регион", "Region")]] },
+  domain:  { label: L("Домен", "Domain"),             icon: "globe",       glyph: "◎", color: "#9fe6dc", fields: [["host", L("Домен", "Domain")], ["registrar", L("Регистратор", "Registrar")], ["created", L("Создан", "Registered on")]] },
+  ip:      { label: L("IP / сервер", "IP / server"),  icon: "server",      glyph: "▤", color: "#c6e07a", fields: [["ip", L("Адрес", "Address")], ["asn", "ASN"], ["geo", L("Гео", "Location")]] },
+  place:   { label: L("Место", "Place"),              icon: "map-pin",     glyph: "⌖", color: "#d9b38c", fields: [["addr", L("Адрес", "Address")], ["coords", L("Координаты", "Coordinates")]] },
+  vehicle: { label: L("Транспорт", "Vehicle"),        icon: "car",         glyph: "▶", color: "#a7b4c8", fields: [["model", L("Модель", "Model")], ["plate", L("Номер", "Plate number")], ["color", L("Цвет", "Color")]] },
+  doc:     { label: L("Документ", "Document"),        icon: "file-text",   glyph: "▦", color: "#d8d2c4", fields: [["kind", L("Вид", "Type")], ["num", L("Номер", "Number")], ["date", L("Дата", "Date")]] },
+}));
+const caseConf = floraLazy(() => [["confirmed", L("подтверждено", "confirmed")], ["likely", L("вероятно", "likely")], ["unverified", L("не проверено", "unverified")]]);
+// статус дела хранится как id; старые дела хранили русское слово — оно тоже понимается
+const CASE_STATUS = ["open", "active", "paused", "closed"];
+const CASE_STATUS_RU = ["открыто", "в работе", "на паузе", "закрыто"];
+const CASE_STATUS_EN = ["open", "in progress", "paused", "closed"];
+function caseStatusId(v) {
+  const t = String(v == null ? "" : v).trim().toLowerCase();
+  for (const list of [CASE_STATUS, CASE_STATUS_RU, CASE_STATUS_EN]) { const i = list.indexOf(t); if (i >= 0) return CASE_STATUS[i]; }
+  return CASE_STATUS[0];
+}
+function caseStatusLabel(id) { const i = Math.max(0, CASE_STATUS.indexOf(caseStatusId(id))); return L(CASE_STATUS_RU[i], CASE_STATUS_EN[i]); }
 // шкала оценки источников (как в разведке): надёжность источника A–F, достоверность сведений 1–6
-const REL = { A: "полностью надёжен", B: "обычно надёжен", C: "довольно надёжен", D: "обычно ненадёжен", E: "ненадёжен", F: "нельзя оценить" };
-const CRED = { 1: "подтверждено другими", 2: "вероятно правда", 3: "возможно правда", 4: "сомнительно", 5: "маловероятно", 6: "нельзя оценить" };
+const caseRel = floraLazy(() => ({
+  A: L("полностью надёжен", "Completely reliable"), B: L("обычно надёжен", "Usually reliable"), C: L("довольно надёжен", "Fairly reliable"),
+  D: L("обычно ненадёжен", "Not usually reliable"), E: L("ненадёжен", "Unreliable"), F: L("нельзя оценить", "Reliability cannot be judged"),
+}));
+const caseCred = floraLazy(() => ({
+  1: L("подтверждено другими", "Confirmed by other sources"), 2: L("вероятно правда", "Probably true"), 3: L("возможно правда", "Possibly true"),
+  4: L("сомнительно", "Doubtful"), 5: L("маловероятно", "Improbable"), 6: L("нельзя оценить", "Truth cannot be judged"),
+}));
+// подсказка к оценке: «A — полностью надёжен» / «A: Completely reliable»
+function caseGradeTitle(k, text) { return k + L(" — ", ": ") + text; }
 
-function plural(n, f) { const m10 = n % 10, m100 = n % 100; return f[m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? 1 : 2]; }
-const P_OBJ = ["объект", "объекта", "объектов"], P_LINK = ["связь", "связи", "связей"], P_EV = ["событие", "события", "событий"], P_SRC = ["источник", "источника", "источников"];
+const P_OBJ = [["объект", "объекта", "объектов"], ["entity", "entities"]], P_LINK = [["связь", "связи", "связей"], ["link", "links"]];
+const P_EV = [["событие", "события", "событий"], ["event", "events"]], P_SRC = [["источник", "источника", "источников"], ["source", "sources"]];
+const P_CONF = [["подтверждено", "подтверждено", "подтверждено"], ["confirmed", "confirmed"]];
 function uid() { return Math.random().toString(36).slice(2, 9); }
 function todayIso() { const d = new Date(); return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+function entityType(e) { const T = caseTypes(); return T[e && e.type] || T.doc; }
 function entityName(e) {
-  const t = ENTITY_TYPES[e.type] || ENTITY_TYPES.doc;
+  const t = entityType(e);
   for (const [k] of t.fields) if (e.fields && String(e.fields[k] || "").trim()) return String(e.fields[k]).trim();
-  return "без имени";
+  return L("без имени", "unnamed");
 }
+// номер дела из свойств заметки: «код» (старые и русские дела) или «code»
+function caseFmCode(fm) { return fm ? (fm["код"] != null ? fm["код"] : fm["code"]) : null; }
+function caseFmStatus(fm) { return caseStatusId(fm ? (fm["статус"] != null ? fm["статус"] : fm["status"]) : null); }
 
 class CaseStore {
   constructor(app) { this.app = app; }
@@ -54,7 +77,7 @@ class CaseStore {
   normalize(d) {
     d = d || {};
     return {
-      v: 1, code: d.code || "0001", title: d.title || "Новое дело", status: d.status || CASE_STATUS[0],
+      v: 1, code: d.code || "0001", title: d.title || L("Новое дело", "New case"), status: caseStatusId(d.status),
       created: d.created || todayIso(), summary: d.summary || "",
       entities: Array.isArray(d.entities) ? d.entities : [], links: Array.isArray(d.links) ? d.links : [],
       events: Array.isArray(d.events) ? d.events : [], sources: Array.isArray(d.sources) ? d.sources : [],
@@ -62,51 +85,61 @@ class CaseStore {
   }
   render(d) {
     const byId = new Map(d.entities.map((e) => [e.id, e]));
+    const CONF = caseConf();
     const conf = (c) => (CONF.find((x) => x[0] === c) || CONF[2])[1];
-    const L = [];
-    L.push("---", "ng-case: true", "код: \"" + d.code + "\"", "статус: " + d.status, "создано: " + d.created, "---", "");
-    L.push("%% Это дело ведёт Flora. Меняйте его на доске «Расследование»: сводка ниже пересобирается автоматически. %%", "");
-    L.push("```ng-case", JSON.stringify(d, null, 1), "```", "");
-    L.push("# " + d.title, "");
-    if (d.summary) L.push("> " + d.summary.replace(/\n/g, "\n> "), "");
+    const ru = FLORA_LANG === "ru";
+    // сводка ниже — только для чтения человеком; данные дела берутся из блока ng-case
+    const out = [];
+    out.push("---", "ng-case: true");
+    if (ru) out.push("код: \"" + d.code + "\"", "статус: " + caseStatusLabel(d.status), "создано: " + d.created);
+    else out.push("code: \"" + d.code + "\"", "status: " + caseStatusLabel(d.status), "created: " + d.created);
+    out.push("---", "");
+    out.push(L("%% Это дело ведёт Flora. Меняйте его на доске «Расследование»: сводка ниже пересобирается автоматически. %%",
+      "%% This case is managed by Flora. Edit it on the Investigation board: the summary below is rebuilt automatically. %%"), "");
+    out.push("```ng-case", JSON.stringify(d, null, 1), "```", "");
+    out.push("# " + d.title, "");
+    if (d.summary) out.push("> " + d.summary.replace(/\n/g, "\n> "), "");
     if (d.entities.length) {
-      L.push("## Объекты");
+      out.push(L("## Объекты", "## Entities"));
       for (const e of d.entities) {
-        const t = ENTITY_TYPES[e.type] || ENTITY_TYPES.doc;
+        const t = entityType(e);
         const extra = t.fields.map(([k, lab]) => (e.fields && e.fields[k] ? lab + ": " + e.fields[k] : "")).filter(Boolean).slice(1).join("; ");
-        L.push("- **" + entityName(e) + "** · " + t.label + " · " + conf(e.conf) + (extra ? " — " + extra : "") + (e.note ? " _(" + e.note + ")_" : ""));
+        const note = e.note ? " _(" + e.note + ")_" : "";
+        if (ru) out.push("- **" + entityName(e) + "** · " + t.label + " · " + conf(e.conf) + (extra ? " — " + extra : "") + note);
+        else out.push("- **" + entityName(e) + "** (" + t.label + ", " + conf(e.conf) + ")" + (extra ? ". " + extra : "") + note);
       }
-      L.push("");
+      out.push("");
     }
     if (d.links.length) {
-      L.push("## Связи");
+      out.push(L("## Связи", "## Links"));
       for (const l of d.links) {
         const a = byId.get(l.a), b = byId.get(l.b);
-        if (a && b) L.push("- " + entityName(a) + " → " + entityName(b) + (l.label ? " — «" + l.label + "»" : "") + " (" + conf(l.conf) + ")");
+        if (a && b) out.push("- " + entityName(a) + " → " + entityName(b) + (l.label ? L(" — «" + l.label + "»", ": \"" + l.label + "\"") : "") + " (" + conf(l.conf) + ")");
       }
-      L.push("");
+      out.push("");
     }
     if (d.events.length) {
-      L.push("## Хронология");
-      for (const ev of d.events.slice().sort((x, y) => String(x.date).localeCompare(String(y.date)))) L.push("- " + (ev.date || "без даты") + " — " + (ev.text || ""));
-      L.push("");
+      out.push(L("## Хронология", "## Timeline"));
+      for (const ev of d.events.slice().sort((x, y) => String(x.date).localeCompare(String(y.date)))) out.push("- " + (ev.date || L("без даты", "no date")) + L(" — ", ": ") + (ev.text || ""));
+      out.push("");
     }
     if (d.sources.length) {
-      L.push("## Источники");
-      for (const s of d.sources) L.push("- [" + s.rel + s.cred + "] " + (s.title || "без названия") + (s.url ? " — " + s.url : "") + (s.accessed ? " (" + s.accessed + ")" : ""));
-      L.push("");
+      out.push(L("## Источники", "## Sources"));
+      for (const s of d.sources) out.push("- [" + s.rel + s.cred + "] " + (s.title || L("без названия", "untitled")) + (s.url ? L(" — ", ", ") + s.url : "") + (s.accessed ? " (" + s.accessed + ")" : ""));
+      out.push("");
     }
-    return L.join("\n");
+    return out.join("\n");
   }
   async save(file, d) { await this.app.vault.modify(file, this.render(d)); }
   async create() {
     let max = 0;
-    for (const f of this.list()) { const c = this.app.metadataCache.getFileCache(f); const n = parseInt(c && c.frontmatter && c.frontmatter["код"], 10); if (n > max) max = n; }
+    for (const f of this.list()) { const c = this.app.metadataCache.getFileCache(f); const n = parseInt(caseFmCode(c && c.frontmatter), 10); if (n > max) max = n; }
     const code = String(max + 1).padStart(4, "0");
-    if (!this.app.vault.getAbstractFileByPath(CASE_FOLDER)) await this.app.vault.createFolder(CASE_FOLDER);
-    let path = CASE_FOLDER + "/Дело " + code + ".md", i = 2;
-    while (this.app.vault.getAbstractFileByPath(path)) path = CASE_FOLDER + "/Дело " + code + " (" + i++ + ").md";
-    const d = this.normalize({ code, title: "Дело " + code });
+    const folder = caseFolder(), name = L("Дело ", "Case ") + code;
+    if (!this.app.vault.getAbstractFileByPath(folder)) await this.app.vault.createFolder(folder);
+    let path = folder + "/" + name + ".md", i = 2;
+    while (this.app.vault.getAbstractFileByPath(path)) path = folder + "/" + name + " (" + i++ + ").md";
+    const d = this.normalize({ code, title: name });
     return this.app.vault.create(path, this.render(d));
   }
 }
@@ -119,7 +152,7 @@ class CaseView extends obsidian.ItemView {
     this.file = null; this.data = null; this.R = null;
   }
   getViewType() { return CASE_VIEW; }
-  getDisplayText() { return this.data ? "Дело " + this.data.code : "Расследование"; }
+  getDisplayText() { return this.data ? L("Дело ", "Case ") + this.data.code : L("Расследование", "Investigation"); }
   getIcon() { return "fingerprint"; }
   getState() { return { file: this.file ? this.file.path : null }; }
   async setState(state, result) {
@@ -196,7 +229,7 @@ class CaseView extends obsidian.ItemView {
   async openCase(file) {
     if (this.dirty) await this.flush();
     const d = await this.store.load(file);
-    if (!d) { new obsidian.Notice("В этой заметке нет данных дела"); return; }
+    if (!d) { new obsidian.Notice(L("В этой заметке нет данных дела", "This note has no case data")); return; }
     this.file = file; this.data = d;
     this.renderSide();
     this.renderMain();
@@ -212,19 +245,20 @@ class CaseView extends obsidian.ItemView {
     const s = this.side;
     if (!s) return;
     s.textContent = "";
-    this.mk("div", "ng-case-side-title", s, "Дела");
+    this.mk("div", "ng-case-side-title", s, L("Дела", "Cases"));
     const nb = this.mk("button", "ng-case-new", s);
     const nbi = this.mk("span", "ng-case-btn-ico", nb); this.setIco(nbi, "plus", "＋");
-    this.mk("span", null, nb, "Новое дело");
+    this.mk("span", null, nb, L("Новое дело", "New case"));
     nb.addEventListener("click", () => this.newCase());
     const list = this.mk("div", "ng-case-list", s);
     for (const f of this.store.list()) {
       const c = this.app.metadataCache.getFileCache(f) || {};
       const fm = c.frontmatter || {};
       const b = this.mk("button", "ng-case-item" + (this.file && f.path === this.file.path ? " is-active" : ""), list);
-      this.mk("span", "ng-case-item-code", b, "Дело " + (fm["код"] || "—"));
+      this.mk("span", "ng-case-item-code", b, L("Дело ", "Case ") + (caseFmCode(fm) || "—"));
       this.mk("span", "ng-case-item-title", b, (this.file && f.path === this.file.path && this.data ? this.data.title : f.basename));
-      this.mk("span", "ng-case-item-status st-" + CASE_STATUS.indexOf(fm["статус"] || CASE_STATUS[0]), b, fm["статус"] || CASE_STATUS[0]);
+      const st = caseFmStatus(fm);
+      this.mk("span", "ng-case-item-status st-" + CASE_STATUS.indexOf(st), b, caseStatusLabel(st));
       b.addEventListener("click", () => this.openCase(f));
     }
   }
@@ -233,9 +267,10 @@ class CaseView extends obsidian.ItemView {
     m.textContent = "";
     const box = this.mk("div", "ng-case-empty", m);
     const ei = this.mk("div", "ng-case-empty-icon", box); this.setIco(ei, "fingerprint", "⌖");
-    this.mk("div", "ng-case-empty-title", box, "Пока ни одного дела");
-    this.mk("div", "ng-case-empty-text", box, "Дело — это доска: объекты (люди, аккаунты, домены, места…), связи между ними, хронология и источники с оценкой надёжности. Хранится обычной заметкой в папке «" + CASE_FOLDER + "».");
-    const b = this.mk("button", "ng-case-cta", box, "Создать первое дело");
+    this.mk("div", "ng-case-empty-title", box, L("Пока ни одного дела", "No cases yet"));
+    this.mk("div", "ng-case-empty-text", box, L("Дело — это доска: объекты (люди, аккаунты, домены, места…), связи между ними, хронология и источники с оценкой надёжности. Хранится обычной заметкой в папке «" + caseFolder() + "».",
+      "A case is a board: entities (people, accounts, domains, places and more), the links between them, a timeline, and sources rated for reliability. It is stored as a regular note in the \"" + caseFolder() + "\" folder."));
+    const b = this.mk("button", "ng-case-cta", box, L("Создать первое дело", "Create the first case"));
     b.addEventListener("click", () => this.newCase());
   }
 
@@ -245,14 +280,14 @@ class CaseView extends obsidian.ItemView {
     if (this.R) { this.R.destroy(); this.R = null; }
     m.textContent = "";
     const head = this.mk("header", "ng-case-head", m);
-    this.mk("div", "ng-case-meta", head, "Дело " + d.code + ", открыто " + d.created.split("-").reverse().join("."));
-    const title = this.input(head, d.title, "Название дела", (v) => { d.title = v; }, "ng-case-title");
+    this.mk("div", "ng-case-meta", head, L("Дело " + d.code + ", открыто " + d.created.split("-").reverse().join("."), "Case " + d.code + ", opened " + d.created));
+    const title = this.input(head, d.title, L("Название дела", "Case title"), (v) => { d.title = v; }, "ng-case-title");
     title.addEventListener("change", () => this.renderSide());
     const sum = this.mk("textarea", "ng-case-summary", head);
-    sum.value = d.summary; sum.placeholder = "Суть дела: что известно, что ищем, гипотеза…"; sum.rows = 2;
+    sum.value = d.summary; sum.placeholder = L("Суть дела: что известно, что ищем, гипотеза…", "What the case is about: what is known, what you are looking for, your hypothesis…"); sum.rows = 2;
     sum.addEventListener("input", () => { d.summary = sum.value; this.changed(); });
     const row = this.mk("div", "ng-case-head-row", head);
-    this.chips(row, CASE_STATUS.map((s) => [s, s.charAt(0).toUpperCase() + s.slice(1)]), d.status, (v) => { d.status = v; setTimeout(() => this.renderSide(), 800); }, "ng-case-status ng-seg");
+    this.chips(row, CASE_STATUS.map((s) => { const t = caseStatusLabel(s); return [s, t.charAt(0).toUpperCase() + t.slice(1)]; }), d.status, (v) => { d.status = v; setTimeout(() => this.renderSide(), 800); }, "ng-case-status ng-seg");
     this.statsEl = this.mk("div", "ng-case-stats", row);
 
     // карта связей — живая ткань
@@ -282,13 +317,13 @@ class CaseView extends obsidian.ItemView {
 
   sectionEntities(m) {
     const d = this.data;
-    const sec = this.entSec = this.section(m, "", "Объекты", "Люди, аккаунты, адреса и всё, что фигурирует в деле");
+    const sec = this.entSec = this.section(m, "", L("Объекты", "Entities"), L("Люди, аккаунты, адреса и всё, что фигурирует в деле", "People, accounts, addresses and anything else that appears in the case"));
     const grid = this.mk("div", "ng-case-grid", sec);
     for (const e of d.entities) this.entityCard(grid, e);
     // выбор типа нового объекта
     const add = this.mk("div", "ng-case-add", sec);
-    this.mk("span", "ng-case-add-label", add, "Добавить");
-    for (const [type, t] of Object.entries(ENTITY_TYPES)) {
+    this.mk("span", "ng-case-add-label", add, L("Добавить", "Add"));
+    for (const [type, t] of Object.entries(caseTypes())) {
       const b = this.mk("button", "ng-case-add-type", add);
       b.style.setProperty("--ng-c", t.color);
       const ic = this.mk("span", "ng-case-add-icon", b); this.setIco(ic, t.icon, t.glyph);
@@ -305,7 +340,7 @@ class CaseView extends obsidian.ItemView {
 
   entityCard(grid, e) {
     const d = this.data;
-    const t = ENTITY_TYPES[e.type] || ENTITY_TYPES.doc;
+    const t = entityType(e);
     const card = this.mk("div", "ng-case-card", grid);
     card.dataset.entity = e.id;
     card.style.setProperty("--ng-c", t.color);
@@ -313,7 +348,7 @@ class CaseView extends obsidian.ItemView {
     const ic = this.mk("span", "ng-case-card-icon", top); this.setIco(ic, t.icon, t.glyph);
     this.mk("span", "ng-case-card-type", top, t.label);
     const del = this.mk("button", "ng-case-del", top, "×");
-    del.setAttribute("aria-label", "Убрать объект");
+    del.setAttribute("aria-label", L("Убрать объект", "Remove entity"));
     del.addEventListener("click", () => {
       d.entities = d.entities.filter((x) => x !== e);
       d.links = d.links.filter((l) => l.a !== e.id && l.b !== e.id);
@@ -326,21 +361,21 @@ class CaseView extends obsidian.ItemView {
       this.input(row, e.fields[k], i === 0 ? label + "…" : "", (v) => { e.fields[k] = v; if (i === 0) this.refreshLinkSelects(true); });
     });
     const note = this.mk("textarea", "ng-case-note", card);
-    note.placeholder = "заметка, откуда известно…"; note.rows = 1; note.value = e.note || "";
+    note.placeholder = L("заметка, откуда известно…", "note: how you know this…"); note.rows = 1; note.value = e.note || "";
     note.addEventListener("input", () => { e.note = note.value; this.changed(); });
-    this.chips(card, CONF.map(([v, l]) => [v, l]), e.conf, (v) => { e.conf = v; card.dataset.conf = v; }, "ng-case-conf");
+    this.chips(card, caseConf().map(([v, l]) => [v, l]), e.conf, (v) => { e.conf = v; card.dataset.conf = v; }, "ng-case-conf");
     card.dataset.conf = e.conf;
     return card;
   }
 
   sectionLinks(m) {
-    const sec = this.linkSec = this.section(m, "", "Связи", "Кто с кем и как связан");
+    const sec = this.linkSec = this.section(m, "", L("Связи", "Links"), L("Кто с кем и как связан", "Who is connected to whom, and how"));
     this.linkList = this.mk("div", "ng-case-links", sec);
     this.rerenderLinks();
-    const add = this.mk("button", "ng-case-addrow", sec, "Добавить связь");
+    const add = this.mk("button", "ng-case-addrow", sec, L("Добавить связь", "Add link"));
     add.addEventListener("click", () => {
       const d = this.data;
-      if (d.entities.length < 2) { new obsidian.Notice("Для связи нужно хотя бы два объекта"); return; }
+      if (d.entities.length < 2) { new obsidian.Notice(L("Для связи нужно хотя бы два объекта", "A link needs at least two entities")); return; }
       d.links.push({ id: uid(), a: d.entities[0].id, b: d.entities[1].id, label: "", conf: "unverified" });
       this.rerenderLinks(); this.changed(true);
     });
@@ -349,7 +384,7 @@ class CaseView extends obsidian.ItemView {
     if (!this.linkList) return;
     const d = this.data;
     this.linkList.textContent = "";
-    if (!d.links.length) this.mk("div", "ng-case-none", this.linkList, "Связей пока нет");
+    if (!d.links.length) this.mk("div", "ng-case-none", this.linkList, L("Связей пока нет", "No links yet"));
     for (const l of d.links) {
       const row = this.mk("div", "ng-case-link", this.linkList);
       const sel = (val, on) => {
@@ -361,10 +396,10 @@ class CaseView extends obsidian.ItemView {
       };
       sel(l.a, (v) => { l.a = v; });
       this.mk("span", "ng-case-arrow", row, "—");
-      this.input(row, l.label, "как связаны: владелец, друг, звонил…", (v) => { l.label = v; }, "ng-case-link-label");
+      this.input(row, l.label, L("как связаны: владелец, друг, звонил…", "how they are linked: owner, friend, called…"), (v) => { l.label = v; }, "ng-case-link-label");
       this.mk("span", "ng-case-arrow", row, "→");
       sel(l.b, (v) => { l.b = v; });
-      this.chips(row, CONF.map(([v, lab]) => [v, lab.split(" ")[0] === "не" ? "?" : lab === "подтверждено" ? "✓" : "≈", lab]), l.conf, (v) => { l.conf = v; }, "ng-case-conf mini");
+      this.chips(row, caseConf().map(([v, lab]) => [v, v === "unverified" ? "?" : v === "confirmed" ? "✓" : "≈", lab]), l.conf, (v) => { l.conf = v; }, "ng-case-conf mini");
       const del = this.mk("button", "ng-case-del", row, "×");
       del.addEventListener("click", () => { d.links = d.links.filter((x) => x !== l); this.rerenderLinks(); this.changed(true); });
     }
@@ -373,7 +408,7 @@ class CaseView extends obsidian.ItemView {
     s.textContent = "";
     for (const e of this.data.entities) {
       const o = this.doc.createElement("option");
-      o.value = e.id; o.textContent = (ENTITY_TYPES[e.type] || ENTITY_TYPES.doc).glyph + " " + entityName(e);
+      o.value = e.id; o.textContent = entityType(e).glyph + " " + entityName(e);
       if (e.id === val) o.selected = true;
       s.appendChild(o);
     }
@@ -385,53 +420,54 @@ class CaseView extends obsidian.ItemView {
   }
 
   sectionEvents(m) {
-    const sec = this.section(m, "", "Хронология", "Что и когда произошло");
+    const sec = this.section(m, "", L("Хронология", "Timeline"), L("Что и когда произошло", "What happened and when"));
     const list = this.mk("div", "ng-case-timeline", sec);
     const draw = () => {
       list.textContent = "";
       const d = this.data;
-      if (!d.events.length) this.mk("div", "ng-case-none", list, "Событий пока нет");
+      if (!d.events.length) this.mk("div", "ng-case-none", list, L("Событий пока нет", "No events yet"));
       for (const ev of d.events) {
         const row = this.mk("div", "ng-case-event", list);
         this.mk("span", "ng-case-event-dot", row);
         const date = this.mk("input", "ng-case-input ng-case-date", row);
         date.type = "date"; date.value = ev.date || "";
         date.addEventListener("change", () => { ev.date = date.value; this.changed(); });
-        this.input(row, ev.text, "что произошло…", (v) => { ev.text = v; }, "ng-case-event-text");
+        this.input(row, ev.text, L("что произошло…", "what happened…"), (v) => { ev.text = v; }, "ng-case-event-text");
         const del = this.mk("button", "ng-case-del", row, "×");
         del.addEventListener("click", () => { d.events = d.events.filter((x) => x !== ev); draw(); this.changed(); });
       }
     };
     draw();
-    const add = this.mk("button", "ng-case-addrow", sec, "Добавить событие");
+    const add = this.mk("button", "ng-case-addrow", sec, L("Добавить событие", "Add event"));
     add.addEventListener("click", () => { this.data.events.push({ id: uid(), date: todayIso(), text: "" }); draw(); this.changed(); const inp = list.querySelectorAll(".ng-case-event-text"); if (inp.length) inp[inp.length - 1].focus(); });
   }
 
   sectionSources(m) {
-    const sec = this.section(m, "", "Источники", "Откуда сведения и насколько им верить");
+    const sec = this.section(m, "", L("Источники", "Sources"), L("Откуда сведения и насколько им верить", "Where the information comes from and how much to trust it"));
     const list = this.mk("div", "ng-case-sources", sec);
     const draw = () => {
       list.textContent = "";
       const d = this.data;
-      if (!d.sources.length) this.mk("div", "ng-case-none", list, "Источников пока нет");
+      if (!d.sources.length) this.mk("div", "ng-case-none", list, L("Источников пока нет", "No sources yet"));
       for (const s of d.sources) {
         const card = this.mk("div", "ng-case-source", list);
         const grade = this.mk("div", "ng-case-grade", card, s.rel + s.cred);
         grade.dataset.rel = s.rel;
         const body = this.mk("div", "ng-case-source-body", card);
-        this.input(body, s.title, "название источника", (v) => { s.title = v; }, "ng-case-source-title");
-        this.input(body, s.url, "ссылка или где лежит", (v) => { s.url = v; }, "ng-case-source-url");
+        this.input(body, s.title, L("название источника", "source name"), (v) => { s.title = v; }, "ng-case-source-title");
+        this.input(body, s.url, L("ссылка или где лежит", "link or where it is kept"), (v) => { s.url = v; }, "ng-case-source-url");
         const scales = this.mk("div", "ng-case-scales", body);
-        this.mk("span", "ng-case-scale-label", scales, "Надёжность");
-        this.chips(scales, Object.keys(REL).map((k) => [k, k, k + " — " + REL[k]]), s.rel, (v) => { s.rel = v; grade.textContent = s.rel + s.cred; grade.dataset.rel = v; }, "ng-case-scale");
-        this.mk("span", "ng-case-scale-label", scales, "Достоверность");
-        this.chips(scales, Object.keys(CRED).map((k) => [k, k, k + " — " + CRED[k]]), s.cred, (v) => { s.cred = v; grade.textContent = s.rel + s.cred; }, "ng-case-scale");
+        this.mk("span", "ng-case-scale-label", scales, L("Надёжность", "Reliability"));
+        const REL = caseRel(), CRED = caseCred();
+        this.chips(scales, Object.keys(REL).map((k) => [k, k, caseGradeTitle(k, REL[k])]), s.rel, (v) => { s.rel = v; grade.textContent = s.rel + s.cred; grade.dataset.rel = v; }, "ng-case-scale");
+        this.mk("span", "ng-case-scale-label", scales, L("Достоверность", "Credibility"));
+        this.chips(scales, Object.keys(CRED).map((k) => [k, k, caseGradeTitle(k, CRED[k])]), s.cred, (v) => { s.cred = v; grade.textContent = s.rel + s.cred; }, "ng-case-scale");
         const del = this.mk("button", "ng-case-del", card, "×");
         del.addEventListener("click", () => { d.sources = d.sources.filter((x) => x !== s); draw(); this.changed(); });
       }
     };
     draw();
-    const add = this.mk("button", "ng-case-addrow", sec, "Добавить источник");
+    const add = this.mk("button", "ng-case-addrow", sec, L("Добавить источник", "Add source"));
     add.addEventListener("click", () => { this.data.sources.push({ id: uid(), title: "", url: "", rel: "F", cred: "6", accessed: todayIso() }); draw(); this.changed(); });
   }
 
@@ -440,10 +476,10 @@ class CaseView extends obsidian.ItemView {
     const d = this.data;
     const conf = d.entities.filter((e) => e.conf === "confirmed").length;
     this.statsEl.textContent = "";
-    for (const [n, f] of [[d.entities.length, P_OBJ], [conf, ["подтверждено", "подтверждено", "подтверждено"]], [d.links.length, P_LINK], [d.events.length, P_EV], [d.sources.length, P_SRC]]) {
+    for (const [n, f] of [[d.entities.length, P_OBJ], [conf, P_CONF], [d.links.length, P_LINK], [d.events.length, P_EV], [d.sources.length, P_SRC]]) {
       const c = this.mk("span", "ng-case-stat", this.statsEl);
       this.mk("b", null, c, String(n));
-      this.mk("span", null, c, " " + plural(n, f));
+      this.mk("span", null, c, " " + plural(n, f[0], f[1]));
     }
   }
 
@@ -455,33 +491,33 @@ class CaseView extends obsidian.ItemView {
     const deg = {};
     for (const e of edges) { deg[e.a] = (deg[e.a] || 0) + 1; deg[e.b] = (deg[e.b] || 0) + 1; }
     const nodes = d.entities.map((e) => {
-      const t = ENTITY_TYPES[e.type] || ENTITY_TYPES.doc;
+      const t = entityType(e);
       return { id: e.id, kind: e.type === "person" || e.type === "org" ? "note" : "card", label: entityName(e), group: e.type, color: t.color, deg: deg[e.id] || 0, path: e.id };
     });
     this.R.setData({ nodes, edges, groups: [] });
-    this.mapHint.textContent = nodes.length ? "Карта связей. Нажмите на клетку, чтобы перейти к карточке" : "Карта появится, когда вы добавите объекты";
+    this.mapHint.textContent = nodes.length ? L("Карта связей. Нажмите на клетку, чтобы перейти к карточке", "Link map. Click a cell to jump to its card") : L("Карта появится, когда вы добавите объекты", "The map appears once you add entities");
   }
 }
 
 /** Карточка дела внутри самой заметки (блок ```ng-case```) */
 function renderCaseBlock(plugin, src, el, ctx) {
   let d;
-  try { d = plugin.cases.normalize(JSON.parse(src)); } catch (e) { el.textContent = "Данные дела повреждены"; return; }
+  try { d = plugin.cases.normalize(JSON.parse(src)); } catch (e) { el.textContent = L("Данные дела повреждены", "The case data is damaged"); return; }
   const doc = el.ownerDocument || document;
   const mk = (tag, cls, parent, text) => { const e = doc.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; parent.appendChild(e); return e; };
   const box = mk("div", "ng-case-block", el);
-  mk("div", "ng-case-block-meta", box, "Дело " + d.code + ", " + d.status);
+  mk("div", "ng-case-block-meta", box, L("Дело ", "Case ") + d.code + ", " + caseStatusLabel(d.status));
   mk("div", "ng-case-block-title", box, d.title);
   const stats = mk("div", "ng-case-block-stats", box);
   for (const [n, f] of [[d.entities.length, P_OBJ], [d.links.length, P_LINK], [d.events.length, P_EV], [d.sources.length, P_SRC]]) {
-    const s = mk("span", "ng-case-stat", stats); mk("b", null, s, String(n)); mk("span", null, s, " " + plural(n, f));
+    const s = mk("span", "ng-case-stat", stats); mk("b", null, s, String(n)); mk("span", null, s, " " + plural(n, f[0], f[1]));
   }
   const types = mk("div", "ng-case-block-types", box);
   for (const e of d.entities.slice(0, 18)) {
-    const t = ENTITY_TYPES[e.type] || ENTITY_TYPES.doc;
+    const t = entityType(e);
     const chip = mk("span", "ng-case-block-chip", types, entityName(e));
     chip.style.setProperty("--ng-c", t.color);
   }
-  const b = mk("button", "ng-case-cta", box, "Открыть доску дела");
+  const b = mk("button", "ng-case-cta", box, L("Открыть доску дела", "Open the case board"));
   b.addEventListener("click", () => plugin.openCaseBoard(ctx && ctx.sourcePath));
 }

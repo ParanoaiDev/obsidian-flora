@@ -2,10 +2,16 @@
 /* ------------------------------------------------------------------ */
 /* Журнал дня: шапка ежедневной заметки                                 */
 /* ------------------------------------------------------------------ */
-const RU_MONTHS_GEN = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
-const RU_MONTHS = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
-const RU_WEEKDAYS = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
-const JOURNAL_TEMPLATE = "## Наблюдения\n- \n\n## Задачи\n- [ ] \n\n## Мысли\n\n\n## Связи дня\n- \n";
+const EN_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+// названия месяцев в родительном падеже («9 ноября»); в английском падежей нет
+const monthsGen = floraLazy(() => L(["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"], EN_MONTHS));
+const monthNames = floraLazy(() => L(["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"], EN_MONTHS));
+const weekdayNames = floraLazy(() => L(["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"], ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]));
+function journalTemplate() {
+  return L("## Наблюдения\n- \n\n## Задачи\n- [ ] \n\n## Мысли\n\n\n## Связи дня\n- \n", "## Notes\n- \n\n## Tasks\n- [ ] \n\n## Thoughts\n\n\n## Links of the day\n- \n");
+}
+// «9 ноября» / «November 9»
+function dayMonthText(d) { return L(d.getDate() + " " + monthsGen()[d.getMonth()], monthsGen()[d.getMonth()] + " " + d.getDate()); }
 
 function pad2(n) { return (n < 10 ? "0" : "") + n; }
 function dayStart(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
@@ -40,7 +46,8 @@ class DailyTools {
   looksLikeJournal(file) {
     const c = this.app.metadataCache && this.app.metadataCache.getFileCache && this.app.metadataCache.getFileCache(file);
     const hs = c && c.headings ? c.headings.map((h) => String(h.heading).trim().toLowerCase()) : [];
-    return hs.includes("наблюдения") && hs.includes("задачи") && hs.includes("связи дня");
+    const has = (...need) => need.every((x) => hs.includes(x));
+    return has("наблюдения", "задачи", "связи дня") || has("notes", "tasks", "links of the day");
   }
   remember(file, date) {
     const map = this.store.get();
@@ -208,11 +215,12 @@ class DayHeader {
     const stat = title.appendChild(doc.createElement("div")); stat.className = "ng-day-stat";
     this.statEl = stat;
     const today = new Date();
-    const rel = sameDay(day, today) ? "сегодня" : sameDay(day, addDays(today, -1)) ? "вчера" : sameDay(day, addDays(today, 1)) ? "завтра" : "";
+    const rel = sameDay(day, today) ? L("сегодня", "today") : sameDay(day, addDays(today, -1)) ? L("вчера", "yesterday") : sameDay(day, addDays(today, 1)) ? L("завтра", "tomorrow") : "";
     const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
-    kicker.textContent = rel ? cap(rel) + ", " + RU_WEEKDAYS[day.getDay()] : cap(RU_WEEKDAYS[day.getDay()]);
-    big.textContent = day.getDate() + " " + RU_MONTHS_GEN[day.getMonth()];
-    week.textContent = dayOfYear(day) + "-й день года, " + isoWeek(day) + "-я неделя";
+    const wd = weekdayNames()[day.getDay()];
+    kicker.textContent = rel ? cap(rel) + ", " + wd : cap(wd);
+    big.textContent = dayMonthText(day);
+    week.textContent = L(dayOfYear(day) + "-й день года, " + isoWeek(day) + "-я неделя", "Day " + dayOfYear(day) + ", week " + isoWeek(day));
 
     const nav = band.appendChild(doc.createElement("div"));
     nav.className = "ng-day-nav";
@@ -225,12 +233,12 @@ class DayHeader {
       b.addEventListener("click", (e) => { e.preventDefault(); fn(); });
       return b;
     };
-    this.resetBtn = mkBtn(nav, "rotate-ccw", "↺", "", "Сбросить запись к заготовке (нажать дважды)", () => this.askReset());
+    this.resetBtn = mkBtn(nav, "rotate-ccw", "↺", "", L("Сбросить запись к заготовке (нажать дважды)", "Reset the entry to the template (click twice)"), () => this.askReset());
     this.resetBtn.classList.add("ng-day-reset");
     const seg = nav.appendChild(doc.createElement("div")); seg.className = "ng-day-seg";
-    this.prevBtn = mkBtn(seg, "chevron-left", "‹", "", "Предыдущая запись", () => { const n = this.tools.neighbour(this.day, -1); if (n) this.leaf.openFile(n.f); });
-    mkBtn(seg, null, "", "Сегодня", "Открыть сегодняшнюю заметку", () => this.tools.openDay(new Date(), this.leaf));
-    this.nextBtn = mkBtn(seg, "chevron-right", "›", "", "Следующая запись", () => { const n = this.tools.neighbour(this.day, 1); if (n) this.leaf.openFile(n.f); });
+    this.prevBtn = mkBtn(seg, "chevron-left", "‹", "", L("Предыдущая запись", "Previous entry"), () => { const n = this.tools.neighbour(this.day, -1); if (n) this.leaf.openFile(n.f); });
+    mkBtn(seg, null, "", L("Сегодня", "Today"), L("Открыть сегодняшнюю заметку", "Open today's note"), () => this.tools.openDay(new Date(), this.leaf));
+    this.nextBtn = mkBtn(seg, "chevron-right", "›", "", L("Следующая запись", "Next entry"), () => { const n = this.tools.neighbour(this.day, 1); if (n) this.leaf.openFile(n.f); });
 
     const month = el.appendChild(doc.createElement("div"));
     month.className = "ng-day-month";
@@ -285,9 +293,9 @@ class DayHeader {
       });
       for (const n of g.nodes) if (n.id === me) { n.color = "#8fe3a1"; n.kind = "note"; }
       this.R.setData(g);
-      const k = files.length, m10 = k % 10, m100 = k % 100;
-      const word = m10 === 1 && m100 !== 11 ? "заметка" : m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? "заметки" : "заметок";
-      this.statEl.textContent = k ? k + " " + word + " за этот день" : "За этот день пока нет заметок";
+      const k = files.length;
+      const word = plural(k, ["заметка", "заметки", "заметок"], ["note", "notes"]);
+      this.statEl.textContent = k ? k + " " + word + L(" за этот день", " from this day") : L("За этот день пока нет заметок", "No notes from this day yet");
     }
     this.renderMonth();
     this.renderStart();
@@ -306,13 +314,14 @@ class DayHeader {
       this.monthEl.empty ? this.monthEl.empty() : (this.monthEl.innerHTML = "");
       const label = this.monthEl.appendChild(doc.createElement("span"));
       label.className = "ng-day-month-label";
-      label.textContent = RU_MONTHS[this.day.getMonth()].charAt(0).toUpperCase() + RU_MONTHS[this.day.getMonth()].slice(1);
+      const mn = monthNames()[this.day.getMonth()];
+      label.textContent = mn.charAt(0).toUpperCase() + mn.slice(1);
       this.dots = [];
       for (let i = 1; i <= days; i++) {
         const date = new Date(this.day.getFullYear(), this.day.getMonth(), i);
         const dot = this.monthEl.appendChild(doc.createElement("button"));
         dot.className = "ng-day-dot";
-        dot.setAttribute("aria-label", i + " " + RU_MONTHS_GEN[date.getMonth()]);
+        dot.setAttribute("aria-label", dayMonthText(date));
         if (date.getDay() === 1) dot.classList.add("is-monday");
         dot.addEventListener("click", (e) => { e.preventDefault(); this.tools.openDay(date, this.leaf); });
         this.dots.push({ dot, date });
@@ -334,7 +343,7 @@ class DayHeader {
     if (!this.resetArmed) {
       this.resetArmed = true;
       b.classList.add("is-armed");
-      b.classList.add("is-armed-text"); b.dataset.label = "Сбросить?";
+      b.classList.add("is-armed-text"); b.dataset.label = L("Сбросить?", "Reset?");
       clearTimeout(this.resetTimer);
       this.resetTimer = setTimeout(() => this.disarmReset(), 3000);
       return;
@@ -348,7 +357,7 @@ class DayHeader {
     if (this.resetBtn) { this.resetBtn.classList.remove("is-armed", "is-armed-text"); }
   }
   async resetDay() {
-    const tpl = (await this.tools.templateText(this.day)) || JOURNAL_TEMPLATE;
+    const tpl = (await this.tools.templateText(this.day)) || journalTemplate();
     const ed = this.leaf.view && this.leaf.view.editor;
     if (ed && typeof ed.setValue === "function") ed.setValue(tpl);
     else await this.app.vault.modify(this.file, tpl);
@@ -374,9 +383,9 @@ class DayHeader {
     if (this.startEl.childElementCount) return;
     const doc = this.el.ownerDocument;
     const b = this.startEl.appendChild(doc.createElement("button"));
-    b.textContent = "Начать запись";
+    b.textContent = L("Начать запись", "Start the entry");
     const hint = this.startEl.appendChild(doc.createElement("span"));
-    hint.textContent = "Разделы: наблюдения, задачи, мысли и связи дня";
+    hint.textContent = L("Разделы: наблюдения, задачи, мысли и связи дня", "Sections: notes, tasks, thoughts and links of the day");
     b.addEventListener("click", (e) => { e.preventDefault(); this.resetDay(); });
   }
 

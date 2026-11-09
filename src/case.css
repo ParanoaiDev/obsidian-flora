@@ -81,10 +81,10 @@
 }
 .ng-case-root .ng-case-chip:hover { background: var(--cs-fill); }
 .ng-case-root .ng-case-chip.is-on { background: var(--cs-raised); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18), 0 0 0 0.5px rgba(0, 0, 0, 0.06); }
-.ng-case-status .ng-case-chip.is-on[data-val="открыто"] { color: #30d158; }
-.ng-case-status .ng-case-chip.is-on[data-val="в работе"] { color: #ff9f0a; }
-.ng-case-status .ng-case-chip.is-on[data-val="на паузе"] { color: #64b5ff; }
-.ng-case-status .ng-case-chip.is-on[data-val="закрыто"] { color: var(--text-muted); }
+.ng-case-status .ng-case-chip.is-on[data-val="open"] { color: #30d158; }
+.ng-case-status .ng-case-chip.is-on[data-val="active"] { color: #ff9f0a; }
+.ng-case-status .ng-case-chip.is-on[data-val="paused"] { color: #64b5ff; }
+.ng-case-status .ng-case-chip.is-on[data-val="closed"] { color: var(--text-muted); }
 
 /* ---------- карта связей (всегда тёмная) ---------- */
 .ng-case-map { position: relative; height: 320px; overflow: hidden; background: #000; margin-bottom: 30px; border-radius: 22px; corner-shape: squircle; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 20px 50px -28px rgba(0, 0, 0, 0.7); }

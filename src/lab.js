@@ -2,19 +2,21 @@
 /* ------------------------------------------------------------------ */
 /* Стартовый экран Flora: нейроны-цветы под жидким стеклом              */
 /* ------------------------------------------------------------------ */
-const LAB_APPS = [
-  { label: "Заметка", glyph: "＋", icon: "file-plus", from: "#5ac8fa", to: "#0a63ff", cmd: "file-explorer:new-file" },
-  { label: "Журнал дня", glyph: "◐", icon: "calendar-days", from: "#ffd36b", to: "#ff8a00", cmd: "flora:open-today-journal" },
-  { label: "Нейрограф", glyph: "✺", icon: "brain", from: "#e3a6ff", to: "#9b3dff", cmd: "flora:open" },
-  { label: "Расследование", glyph: "⌖", icon: "fingerprint", from: "#ff9a8b", to: "#ff2d55", cmd: "flora:open-case" },
-  { label: "Холст", glyph: "▦", icon: "layout-dashboard", from: "#8ef0a8", to: "#16b45a", cmd: "canvas:new-file" },
-];
-const LAB_FILE_KINDS = {
-  md: ["Заметка", "file-text", "#8e8e93", "#5b5b60"], canvas: ["Холст", "layout-dashboard", "#8ef0a8", "#16b45a"],
-  base: ["База", "table", "#7cc6ff", "#2f7bff"], pdf: ["PDF", "file-text", "#ff9a8b", "#e0343c"],
-  png: ["Картинка", "image", "#ffd36b", "#ff9500"], jpg: ["Картинка", "image", "#ffd36b", "#ff9500"],
-  jpeg: ["Картинка", "image", "#ffd36b", "#ff9500"], webp: ["Картинка", "image", "#ffd36b", "#ff9500"],
-};
+const labApps = floraLazy(() => [
+  { label: L("Заметка", "Note"), glyph: "＋", icon: "file-plus", from: "#5ac8fa", to: "#0a63ff", cmd: "file-explorer:new-file" },
+  { label: L("Журнал дня", "Today's journal"), glyph: "◐", icon: "calendar-days", from: "#ffd36b", to: "#ff8a00", cmd: "flora:open-today-journal" },
+  { label: L("Нейрограф", "Neurograph"), glyph: "✺", icon: "brain", from: "#e3a6ff", to: "#9b3dff", cmd: "flora:open" },
+  { label: L("Расследование", "Investigation"), glyph: "⌖", icon: "fingerprint", from: "#ff9a8b", to: "#ff2d55", cmd: "flora:open-case" },
+  { label: L("Холст", "Canvas"), glyph: "▦", icon: "layout-dashboard", from: "#8ef0a8", to: "#16b45a", cmd: "canvas:new-file" },
+]);
+const labFileKinds = floraLazy(() => {
+  const img = [L("Картинка", "Image"), "image", "#ffd36b", "#ff9500"];
+  return {
+    md: [L("Заметка", "Note"), "file-text", "#8e8e93", "#5b5b60"], canvas: [L("Холст", "Canvas"), "layout-dashboard", "#8ef0a8", "#16b45a"],
+    base: [L("База", "Base"), "table", "#7cc6ff", "#2f7bff"], pdf: ["PDF", "file-text", "#ff9a8b", "#e0343c"],
+    png: img, jpg: img, jpeg: img, webp: img,
+  };
+});
 
 // «клумба» из клеток: несколько цветков разных цветов по всему экрану
 function labGraph() {
@@ -57,7 +59,7 @@ class LabScreen {
   icon(el, name, glyph) { if (typeof obsidian.setIcon === "function") obsidian.setIcon(el, name); else el.textContent = glyph || ""; }
   run(cmd) {
     const ok = this.app.commands && this.app.commands.executeCommandById && this.app.commands.executeCommandById(cmd);
-    if (ok === false) new obsidian.Notice("Эта функция выключена в настройках Obsidian");
+    if (ok === false) new obsidian.Notice(L("Эта функция выключена в настройках Obsidian", "This feature is turned off in Obsidian settings"));
   }
 
   build(host) {
@@ -78,19 +80,19 @@ class LabScreen {
 
     const inner = mk("div", "ng-lab-inner");
     const now = new Date();
-    const wd = RU_WEEKDAYS[now.getDay()];
-    mk("div", "ng-lab-date", inner, wd.charAt(0).toUpperCase() + wd.slice(1) + ", " + now.getDate() + " " + RU_MONTHS_GEN[now.getMonth()]);
+    const wd = weekdayNames()[now.getDay()];
+    mk("div", "ng-lab-date", inner, wd.charAt(0).toUpperCase() + wd.slice(1) + ", " + dayMonthText(now));
     const hour = now.getHours();
-    mk("h1", "ng-lab-title", inner, hour < 5 ? "Доброй ночи" : hour < 12 ? "Доброе утро" : hour < 18 ? "Добрый день" : "Добрый вечер");
+    mk("h1", "ng-lab-title", inner, hour < 5 ? L("Доброй ночи", "Good night") : hour < 12 ? L("Доброе утро", "Good morning") : hour < 18 ? L("Добрый день", "Good afternoon") : L("Добрый вечер", "Good evening"));
 
     const search = mk("button", "ng-lab-search ng-glass", inner);
     const sic = mk("span", "ng-lab-search-icon", search); this.icon(sic, "search", "⌕");
-    mk("span", "ng-lab-search-text", search, "Найти заметку");
+    mk("span", "ng-lab-search-text", search, L("Найти заметку", "Search notes"));
     mk("kbd", "ng-lab-search-key", search, "Ctrl O");
     search.addEventListener("click", () => this.run("switcher:open"));
 
     const dock = mk("div", "ng-lab-dock ng-glass", inner);
-    for (const a of LAB_APPS) {
+    for (const a of labApps()) {
       const b = mk("button", "ng-lab-app", dock);
       const ic = mk("span", "ng-lab-app-icon", b);
       ic.style.setProperty("--from", a.from); ic.style.setProperty("--to", a.to);
@@ -100,7 +102,7 @@ class LabScreen {
     }
 
     const widget = mk("div", "ng-lab-widget ng-glass", inner);
-    mk("div", "ng-lab-widget-title", widget, "Недавние");
+    mk("div", "ng-lab-widget-title", widget, L("Недавние", "Recent"));
     this.recentEl = mk("div", "ng-lab-list", widget);
     this.renderRecent();
 
@@ -119,12 +121,13 @@ class LabScreen {
     const files = paths.map((p) => this.app.vault.getAbstractFileByPath(p)).filter(Boolean);
     if (!files.length) {
       const e = doc.createElement("div"); e.className = "ng-lab-empty";
-      e.textContent = "Здесь появятся заметки, которые вы открывали";
+      e.textContent = L("Здесь появятся заметки, которые вы открывали", "Notes you open will show up here");
       this.recentEl.appendChild(e);
       return;
     }
     for (const f of files) {
-      const kind = LAB_FILE_KINDS[(f.extension || "").toLowerCase()] || LAB_FILE_KINDS.md;
+      const kinds = labFileKinds();
+      const kind = kinds[(f.extension || "").toLowerCase()] || kinds.md;
       const b = doc.createElement("button");
       b.className = "ng-lab-row";
       const ic = doc.createElement("span"); ic.className = "ng-lab-row-icon";

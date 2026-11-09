@@ -1,3 +1,29 @@
+/* Язык интерфейса Flora: английский по умолчанию, русский — если Obsidian на русском.
+   Глобальные помощники видны во всех файлах сборки (core.js идёт первым). */
+function floraDetectLang() {
+  try {
+    const pick = (v) => (String(v || "").toLowerCase().startsWith("ru") ? "ru" : "en");
+    if (typeof window !== "undefined" && window.FLORA_LANG_OVERRIDE) return pick(window.FLORA_LANG_OVERRIDE);
+    return pick(window.localStorage.getItem("language")); // null/"" — английский Obsidian
+  } catch (e) {
+    return "en";
+  }
+}
+let FLORA_LANG = floraDetectLang();
+function L(ru, en) { return FLORA_LANG === "ru" ? ru : en; }
+// plural(n, ["нейрон", "нейрона", "нейронов"], ["neuron", "neurons"])
+function plural(n, ru, en) {
+  if (FLORA_LANG !== "ru" && en) return Math.abs(n) === 1 ? en[0] : en[en.length - 1];
+  const m10 = Math.abs(n) % 10, m100 = Math.abs(n) % 100;
+  return ru[m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? 1 : 2];
+}
+function floraNum(n) { return Number(n).toLocaleString(FLORA_LANG === "ru" ? "ru-RU" : "en-US"); }
+// значение, зависящее от языка: строится при первом обращении и заново после смены языка
+function floraLazy(build) {
+  let v, lang = null;
+  return function () { if (lang !== FLORA_LANG) { v = build(); lang = FLORA_LANG; } return v; };
+}
+
 /* Нейрограф — ядро: сборка графа + живой рендер (Canvas 2D).
    Без зависимостей. Используется и в плагине Obsidian, и в тестовой странице. */
 const NG = (function () {
@@ -222,7 +248,7 @@ const NG = (function () {
           this.glc = glc;
           glc.addEventListener("webglcontextlost", (e) => { e.preventDefault(); this.scene = null; glc.remove(); this.glc = null; });
         } catch (err) {
-          console.warn("Нейрограф: WebGL2 недоступен, включаю простой режим", err);
+          console.warn(L("Нейрограф: WebGL2 недоступен, включаю простой режим", "Neurograph: WebGL2 is not available, using the simple mode"), err);
           glc.remove();
         }
       }
@@ -991,12 +1017,10 @@ const NG = (function () {
     _hud(ctx) {
       if (!this.opts.hud) return;
       // одна капсула: живая точка + «1 018 нейронов  1 214 связей  70 Гц»
-      const plural = (n, f) => { const m10 = n % 10, m100 = n % 100; return f[m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? 1 : 2]; };
-      const num = (n) => n.toLocaleString("ru-RU");
       const parts = [
-        [num(this.nodes.length), plural(this.nodes.length, ["нейрон", "нейрона", "нейронов"])],
-        [num(this.edges.length), plural(this.edges.length, ["связь", "связи", "связей"])],
-        [Math.round(this.hz).toLocaleString("ru-RU"), "Гц"],
+        [floraNum(this.nodes.length), plural(this.nodes.length, ["нейрон", "нейрона", "нейронов"], ["neuron", "neurons"])],
+        [floraNum(this.edges.length), plural(this.edges.length, ["связь", "связи", "связей"], ["link", "links"])],
+        [floraNum(Math.round(this.hz)), L("Гц", "Hz")],
       ];
       const FONT = '"Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif';
       const boldF = "600 12.5px " + FONT, regF = "400 12.5px " + FONT;
@@ -1201,7 +1225,7 @@ const NG = (function () {
   class GLScene {
     constructor(canvas) {
       const gl = canvas.getContext("webgl2", { antialias: false, alpha: false, depth: false, stencil: false, premultipliedAlpha: false, powerPreference: "high-performance" });
-      if (!gl) throw new Error("WebGL2 недоступен");
+      if (!gl) throw new Error(L("WebGL2 недоступен", "WebGL2 is not available"));
       this.gl = gl; this.canvas = canvas;
       this.hdr = !!gl.getExtension("EXT_color_buffer_float");
       this.pLine = this._prog(SHADERS.lineV, SHADERS.lineF);

@@ -3,7 +3,7 @@
 /* Обёртка для Obsidian                                                */
 /* ------------------------------------------------------------------ */
 const VIEW_TYPE = "neural-graph";
-const DEFAULTS = { cards: true, orphans: true, unresolved: false, activity: 1, skinGraph: true, skinLocal: true, skinHud: true, skinCanvas: true, skinDaily: true, autoTasks: true, fullSkin: true, labScreen: true, accent: "blue" };
+const DEFAULTS = { lang: "auto", cards: true, orphans: true, unresolved: false, activity: 1, skinGraph: true, skinLocal: true, skinHud: true, skinCanvas: true, skinDaily: true, autoTasks: true, fullSkin: true, labScreen: true, accent: "blue" };
 
 class NeuralGraphView extends obsidian.ItemView {
   constructor(leaf, plugin) {
@@ -13,7 +13,7 @@ class NeuralGraphView extends obsidian.ItemView {
     this._timer = null;
   }
   getViewType() { return VIEW_TYPE; }
-  getDisplayText() { return "Нейрограф"; }
+  getDisplayText() { return L("Нейрограф", "Neurograph"); }
   getIcon() { return "brain"; }
 
   async onOpen() {
@@ -67,14 +67,14 @@ class NeuralGraphView extends obsidian.ItemView {
         this.refresh();
       };
     };
-    toggle("cards", "sticky-note", "Карточки", "Карточки с холстов");
-    toggle("orphans", "circle-dashed", "Без связей", "Заметки, у которых нет ни одной связи");
-    toggle("unresolved", "link-2-off", "Пустые ссылки", "Ссылки на заметки, которых ещё нет");
+    toggle("cards", "sticky-note", L("Карточки", "Cards"), L("Карточки с холстов", "Cards from canvases"));
+    toggle("orphans", "circle-dashed", L("Без связей", "Orphans"), L("Заметки, у которых нет ни одной связи", "Notes without any links"));
+    toggle("unresolved", "link-2-off", L("Пустые ссылки", "Unresolved"), L("Ссылки на заметки, которых ещё нет", "Links to notes that don't exist yet"));
     // активность и вид
     const view = bar.createDiv({ cls: "ng-ctl-group" });
-    const steps = [[0, "Пауза"], [0.5, "Тихо"], [1, "Обычно"], [2, "Живо"], [4, "Буря"]];
+    const steps = [[0, L("Пауза", "Paused")], [0.5, L("Тихо", "Calm")], [1, L("Обычно", "Normal")], [2, L("Живо", "Lively")], [4, L("Буря", "Storm")]];
     const nameOf = (v) => (steps.find((x) => x[0] === v) || steps[2])[1];
-    const act = btn(view, "zap", nameOf(s.activity), "Как часто клетки сами вспыхивают");
+    const act = btn(view, "zap", nameOf(s.activity), L("Как часто клетки сами вспыхивают", "How often cells fire on their own"));
     act.onclick = async () => {
       const i = steps.findIndex((x) => x[0] === s.activity);
       s.activity = steps[(i + 1) % steps.length][0];
@@ -82,7 +82,7 @@ class NeuralGraphView extends obsidian.ItemView {
       this.renderer.opts.activity = s.activity;
       await this.plugin.saveSettings();
     };
-    const fit = btn(view, "scan", "", "Показать всё (или двойной клик по фону)");
+    const fit = btn(view, "scan", "", L("Показать всё (или двойной клик по фону)", "Fit all (or double-click the background)"));
     fit.onclick = () => this.renderer.fit(false);
   }
 
@@ -113,7 +113,7 @@ class NeuralGraphView extends obsidian.ItemView {
     try {
       this.renderer.setData(await this.collect());
     } catch (e) {
-      console.error("Нейрограф:", e);
+      console.error(L("Нейрограф:", "Neurograph:"), e);
     }
   }
 
@@ -139,55 +139,64 @@ class NeuralGraphSettingTab extends obsidian.PluginSettingTab {
     const s = this.plugin.settings;
     containerEl.empty();
     const save = async () => { await this.plugin.saveSettings(); this.plugin.syncSkins(true); };
-    new obsidian.Setting(containerEl).setName("Интерфейс").setHeading();
     new obsidian.Setting(containerEl)
-      .setName("Дизайн Flora")
-      .setDesc("Новый вид всего Obsidian: стеклянные панели и вкладки, мягкий фон, карточка для текста, новые цвета. Светлая и тёмная тема, работает поверх любой темы оформления.")
+      .setName(L("Язык", "Language"))
+      .setDesc(L("Язык интерфейса Flora. Применяется после перезапуска плагина.", "Language of the Flora interface. Applies after reloading the plugin."))
+      .addDropdown((d) => {
+        d.addOption("auto", L("Авто (язык Obsidian)", "Auto (Obsidian language)"));
+        d.addOption("en", "English");
+        d.addOption("ru", "Русский");
+        d.setValue(s.lang || "auto").onChange(async (v) => { s.lang = v; await this.plugin.saveSettings(); });
+      });
+    new obsidian.Setting(containerEl).setName(L("Интерфейс", "Interface")).setHeading();
+    new obsidian.Setting(containerEl)
+      .setName(L("Дизайн Flora", "Flora design"))
+      .setDesc(L("Новый вид всего Obsidian: стеклянные панели и вкладки, мягкий фон, карточка для текста, новые цвета. Светлая и тёмная тема, работает поверх любой темы оформления.", "A new look for all of Obsidian: glass panels and tabs, a soft background, a card for the text and new colors. Light and dark mode, works on top of any theme."))
       .addToggle((t) => t.setValue(s.fullSkin).onChange(async (v) => { s.fullSkin = v; await this.plugin.saveSettings(); this.plugin.applySkin(); }));
     new obsidian.Setting(containerEl)
-      .setName("Акцентный цвет")
-      .setDesc("Цвет ссылок, выделения, кнопок и активных элементов.")
+      .setName(L("Акцентный цвет", "Accent color"))
+      .setDesc(L("Цвет ссылок, выделения, кнопок и активных элементов.", "Color of links, selection, buttons and active elements."))
       .addDropdown((d) => {
-        for (const [v, l] of [["blue", "Синий"], ["green", "Зелёный"], ["orange", "Оранжевый"], ["pink", "Розовый"], ["graphite", "Графит"]]) d.addOption(v, l);
+        for (const [v, l] of [["blue", L("Синий", "Blue")], ["green", L("Зелёный", "Green")], ["orange", L("Оранжевый", "Orange")], ["pink", L("Розовый", "Pink")], ["graphite", L("Графит", "Graphite")]]) d.addOption(v, l);
         d.setValue(s.accent || "blue").onChange(async (v) => { s.accent = v; await this.plugin.saveSettings(); this.plugin.applySkin(); });
       });
     new obsidian.Setting(containerEl)
-      .setName("Стартовый экран в пустой вкладке")
-      .setDesc("Вместо «Нет открытых файлов» — живая ткань, быстрые действия и недавние заметки.")
+      .setName(L("Стартовый экран в пустой вкладке", "Start screen in empty tabs"))
+      .setDesc(L("Вместо «Нет открытых файлов» — живая ткань, быстрые действия и недавние заметки.", "Shows living tissue, quick actions and recent notes instead of \"No file is open\"."))
       .addToggle((t) => t.setValue(s.labScreen).onChange(async (v) => { s.labScreen = v; await this.plugin.saveSettings(); this.plugin.syncDays(); }));
-    new obsidian.Setting(containerEl).setName("Обычный граф").setHeading();
+    new obsidian.Setting(containerEl).setName(L("Обычный граф", "Graph view")).setHeading();
     new obsidian.Setting(containerEl)
-      .setName("Нейронный вид обычного графа")
-      .setDesc("Граф Obsidian работает как раньше (фильтры, группы, поиск, перетаскивание), но рисуется живыми нейронами.")
+      .setName(L("Нейронный вид обычного графа", "Neural look for the graph view"))
+      .setDesc(L("Граф Obsidian работает как раньше (фильтры, группы, поиск, перетаскивание), но рисуется живыми нейронами.", "The Obsidian graph works as before (filters, groups, search, dragging) but is drawn as living neurons."))
       .addToggle((t) => t.setValue(s.skinGraph).onChange(async (v) => { s.skinGraph = v; await save(); }));
     new obsidian.Setting(containerEl)
-      .setName("Нейронный вид локального графа")
-      .setDesc("То же для локального графа в боковой панели.")
+      .setName(L("Нейронный вид локального графа", "Neural look for the local graph"))
+      .setDesc(L("То же для локального графа в боковой панели.", "The same for the local graph in the sidebar."))
       .addToggle((t) => t.setValue(s.skinLocal).onChange(async (v) => { s.skinLocal = v; await save(); }));
     new obsidian.Setting(containerEl)
-      .setName("Шкала и счётчики")
-      .setDesc("Показывать счётчики и шкалу в углах обычного графа.")
+      .setName(L("Шкала и счётчики", "Scale and counters"))
+      .setDesc(L("Показывать счётчики и шкалу в углах обычного графа.", "Show counters and the scale in the corners of the graph view."))
       .addToggle((t) => t.setValue(s.skinHud).onChange(async (v) => { s.skinHud = v; await save(); }));
-    new obsidian.Setting(containerEl).setName("Холсты").setHeading();
+    new obsidian.Setting(containerEl).setName(L("Холсты", "Canvases")).setHeading();
     new obsidian.Setting(containerEl)
-      .setName("Нейронный вид холстов")
-      .setDesc("Тёмные карточки, связи — живые отростки, по стрелкам бегут импульсы и передаются дальше по схеме.")
+      .setName(L("Нейронный вид холстов", "Neural look for canvases"))
+      .setDesc(L("Тёмные карточки, связи — живые отростки, по стрелкам бегут импульсы и передаются дальше по схеме.", "Dark cards, connections drawn as living neurites, and impulses that run along the arrows and pass on through the diagram."))
       .addToggle((t) => t.setValue(s.skinCanvas).onChange(async (v) => { s.skinCanvas = v; await save(); }));
-    new obsidian.Setting(containerEl).setName("Ежедневные заметки").setHeading();
+    new obsidian.Setting(containerEl).setName(L("Ежедневные заметки", "Daily notes")).setHeading();
     new obsidian.Setting(containerEl)
-      .setName("Журнал дня")
-      .setDesc("Шапка ежедневной заметки: живая полоса с заметками этого дня, дата, переход между днями, точки месяца, заготовка журнала.")
+      .setName(L("Журнал дня", "Today's journal"))
+      .setDesc(L("Шапка ежедневной заметки: живая полоса с заметками этого дня, дата, переход между днями, точки месяца, заготовка журнала.", "A header for daily notes: a living strip with the notes of that day, the date, day navigation, month dots and a journal template."))
       .addToggle((t) => t.setValue(s.skinDaily).onChange(async (v) => { s.skinDaily = v; await this.plugin.saveSettings(); this.plugin.syncDays(); }));
     new obsidian.Setting(containerEl)
-      .setName("Автозадачи")
-      .setDesc("В разделе «Задачи» ежедневной заметки каждая новая строка сама становится задачей с галочкой.")
+      .setName(L("Автозадачи", "Auto tasks"))
+      .setDesc(L("В разделе «Задачи» ежедневной заметки каждая новая строка сама становится задачей с галочкой.", "In the Tasks section of a daily note, every new line becomes a checkbox task automatically."))
       .addToggle((t) => t.setValue(s.autoTasks).onChange(async (v) => { s.autoTasks = v; await this.plugin.saveSettings(); }));
-    new obsidian.Setting(containerEl).setName("Живость").setHeading();
+    new obsidian.Setting(containerEl).setName(L("Живость", "Liveliness")).setHeading();
     new obsidian.Setting(containerEl)
-      .setName("Активность нейронов")
-      .setDesc("Как часто клетки сами вспыхивают и посылают импульсы.")
+      .setName(L("Активность нейронов", "Neuron activity"))
+      .setDesc(L("Как часто клетки сами вспыхивают и посылают импульсы.", "How often cells fire on their own and send impulses."))
       .addDropdown((d) => {
-        for (const v of ["0", "0.5", "1", "2", "4"]) d.addOption(v, v === "0" ? "тишина" : "×" + v);
+        for (const v of ["0", "0.5", "1", "2", "4"]) d.addOption(v, v === "0" ? L("тишина", "Off") : "×" + v);
         d.setValue(String(s.activity)).onChange(async (v) => { s.activity = Number(v); await save(); });
       });
   }
@@ -196,12 +205,15 @@ class NeuralGraphSettingTab extends obsidian.PluginSettingTab {
 class NeuralGraphPlugin extends obsidian.Plugin {
   async onload() {
     this.settings = Object.assign({}, DEFAULTS, await this.loadData());
+    // язык — до регистрации видов, команд и значков
+    const lang = this.settings.lang;
+    FLORA_LANG = lang === "ru" || lang === "en" ? lang : floraDetectLang();
     this.skins = new Map();
     this.registerView(VIEW_TYPE, (leaf) => new NeuralGraphView(leaf, this));
-    this.addRibbonIcon("brain", "Нейрограф", () => this.activate());
-    this.addCommand({ id: "open", name: "Открыть нейрограф", callback: () => this.activate() });
+    this.addRibbonIcon("brain", L("Нейрограф", "Neurograph"), () => this.activate());
+    this.addCommand({ id: "open", name: L("Открыть нейрограф", "Open Neurograph"), callback: () => this.activate() });
     this.addCommand({
-      id: "toggle-core-skin", name: "Вкл/выкл нейронный вид обычного графа",
+      id: "toggle-core-skin", name: L("Вкл/выкл нейронный вид обычного графа", "Toggle the neural look of the graph view"),
       callback: async () => { this.settings.skinGraph = !this.settings.skinGraph; await this.saveSettings(); this.syncSkins(true); },
     });
     this.addSettingTab(new NeuralGraphSettingTab(this.app, this));
@@ -210,9 +222,9 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     // расследование
     this.cases = new CaseStore(this.app);
     this.registerView(CASE_VIEW, (leaf) => new CaseView(leaf, this));
-    this.addRibbonIcon("fingerprint", "Расследование", () => this.openCaseBoard());
-    this.addCommand({ id: "open-case", name: "Открыть доску расследования", callback: () => this.openCaseBoard() });
-    this.addCommand({ id: "new-case", name: "Новое дело", callback: async () => { const f = await this.cases.create(); this.openCaseBoard(f.path); } });
+    this.addRibbonIcon("fingerprint", L("Расследование", "Investigation"), () => this.openCaseBoard());
+    this.addCommand({ id: "open-case", name: L("Открыть доску расследования", "Open the investigation board"), callback: () => this.openCaseBoard() });
+    this.addCommand({ id: "new-case", name: L("Новое дело", "New case"), callback: async () => { const f = await this.cases.create(); this.openCaseBoard(f.path); } });
     this.registerMarkdownCodeBlockProcessor("ng-case", (src, el, ctx) => renderCaseBlock(this, src, el, ctx));
     // лаборатория в пустых вкладках
     this.labs = new Map();
@@ -224,7 +236,7 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     this.registerEvent(this.app.vault.on("rename", (file, oldPath) => { this.daily.onRename(file, oldPath); this.syncDays(); }));
     this.registerEvent(this.app.vault.on("delete", (file) => this.daily.onDelete(file)));
     this.days = new Map();
-    this.addCommand({ id: "open-today-journal", name: "Журнал сегодняшнего дня", callback: () => this.daily.openDay(new Date()) });
+    this.addCommand({ id: "open-today-journal", name: L("Журнал сегодняшнего дня", "Open today's journal"), callback: () => this.daily.openDay(new Date()) });
     this.registerEvent(this.app.workspace.on("file-open", () => this.syncDays()));
     this.registerEvent(this.app.workspace.on("editor-change", (editor, info) => {
       if (!this.settings.autoTasks || this._autoBusy) return;
@@ -236,7 +248,7 @@ class NeuralGraphPlugin extends obsidian.Plugin {
       this._autoT = window.setTimeout(() => {
         if (this._autoBusy) return;
         this._autoBusy = true;
-        try { autoTaskLine(editor); } catch (e) { console.error("Нейрограф: автозадачи", e); }
+        try { autoTaskLine(editor); } catch (e) { console.error(L("Нейрограф: автозадачи", "Neurograph: auto tasks"), e); }
         finally { this._autoBusy = false; }
       }, 0);
     }));
@@ -282,7 +294,7 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     for (const leaf of live) {
       let l = this.labs.get(leaf);
       if (!l) { l = new LabScreen(this, leaf); this.labs.set(leaf, l); }
-      try { l.update(); } catch (e) { console.error("Нейрограф: лаборатория", e); }
+      try { l.update(); } catch (e) { console.error(L("Нейрограф: лаборатория", "Neurograph: start screen"), e); }
     }
   }
 
@@ -294,7 +306,7 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     for (const leaf of live) {
       let h = this.days.get(leaf);
       if (!h) { h = new DayHeader(this, leaf); this.days.set(leaf, h); }
-      try { h.update(); } catch (e) { console.error("Нейрограф: журнал дня", e); }
+      try { h.update(); } catch (e) { console.error(L("Нейрограф: журнал дня", "Neurograph: today's journal"), e); }
     }
   }
 
@@ -317,7 +329,7 @@ class NeuralGraphPlugin extends obsidian.Plugin {
           activity: s.activity, onDead: () => this.dropSkin(leaf),
         }), { kind: "canvas" }));
       } catch (e) {
-        console.error("Нейрограф: не удалось подключиться к холсту", e);
+        console.error(L("Нейрограф: не удалось подключиться к холсту", "Neurograph: could not attach to the canvas"), e);
       }
     }
     for (const [type, on] of [["graph", s.skinGraph], ["localgraph", s.skinLocal]]) {
@@ -334,7 +346,7 @@ class NeuralGraphPlugin extends obsidian.Plugin {
           });
           this.skins.set(leaf, skin);
         } catch (e) {
-          console.error("Нейрограф: не удалось подключиться к графу", e);
+          console.error(L("Нейрограф: не удалось подключиться к графу", "Neurograph: could not attach to the graph"), e);
         }
       }
     }
