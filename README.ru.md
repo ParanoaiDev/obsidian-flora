@@ -11,6 +11,7 @@
 <br />
 
 <a href="https://github.com/ParanoaiDev/obsidian-flora/releases/latest"><img src="https://img.shields.io/github/manifest-json/v/ParanoaiDev/obsidian-flora?style=flat-square&label=версия&color=0a84ff&labelColor=1c1c1e" alt="Версия" /></a>
+<a href="https://community.obsidian.md/plugins/flora"><img src="https://img.shields.io/badge/каталог%20Obsidian-есть-7c3aed?style=flat-square&logo=obsidian&logoColor=white&labelColor=1c1c1e" alt="В каталоге плагинов Obsidian" /></a>
 <a href="https://obsidian.md"><img src="https://img.shields.io/badge/Obsidian-1.4%2B-7c3aed?style=flat-square&logo=obsidian&logoColor=white&labelColor=1c1c1e" alt="Obsidian 1.4+" /></a>
 <a href="https://github.com/ParanoaiDev/obsidian-flora/releases"><img src="https://img.shields.io/github/downloads/ParanoaiDev/obsidian-flora/total?style=flat-square&label=скачиваний&color=30d158&labelColor=1c1c1e" alt="Скачивания" /></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/лицензия-MIT-ff9f0a?style=flat-square&labelColor=1c1c1e" alt="Лицензия MIT" /></a>
@@ -150,11 +151,60 @@
 
 ## 🚀 Установка
 
-Flora пока нет в каталоге сторонних плагинов. До тех пор ставится вручную — это минута.
+### Из Obsidian (рекомендуем)
+
+Flora есть в официальном [каталоге плагинов Obsidian](https://community.obsidian.md/plugins/flora).
+
+1. В Obsidian откройте **Настройки → Сторонние плагины** и включите их, если они выключены.
+2. Нажмите **Обзор**, найдите **Flora**, нажмите **Установить**, затем **Включить**.
+
+Или откройте [страницу Flora в каталоге](https://community.obsidian.md/plugins/flora) и нажмите **Add to Obsidian**.
+
+### Одной командой
+
+Ставит или обновляет Flora из последнего релиза. Скрипт сам найдёт ваши хранилища, спросит, в какое ставить, скачает плагин и включит его. Настройки Flora сохраняются.
+
+**Windows** (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/ParanoaiDev/obsidian-flora/main/install.ps1 | iex
+```
+
+**macOS и Linux** (Терминал):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ParanoaiDev/obsidian-flora/main/install.sh | bash
+```
+
+Если Obsidian был открыт, перезапустите его. Оба скрипта можно сначала прочитать: [install.ps1](install.ps1), [install.sh](install.sh).
+
+<details>
+<summary><b>Указать хранилище самому</b></summary>
+<br />
+
+Windows:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/ParanoaiDev/obsidian-flora/main/install.ps1))) -Vault "C:\путь\к\хранилищу"
+```
+
+macOS и Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ParanoaiDev/obsidian-flora/main/install.sh | bash -s -- "/путь/к/хранилищу"
+```
+
+</details>
+
+<details>
+<summary><b>Вручную</b></summary>
+<br />
 
 1. Откройте [последний релиз](https://github.com/ParanoaiDev/obsidian-flora/releases/latest) и скачайте `main.js`, `manifest.json` и `styles.css`.
 2. Положите их в папку `<ваше хранилище>/.obsidian/plugins/flora/`. Если папки нет — создайте.
-3. В Obsidian откройте **Настройки → Сторонние плагины**, при необходимости включите их и включите **Flora**.
+3. В Obsidian откройте **Настройки → Сторонние плагины** и включите **Flora**.
+
+</details>
 
 <details>
 <summary><b>Через BRAT</b></summary>

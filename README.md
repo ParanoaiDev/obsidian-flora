@@ -11,6 +11,7 @@
 <br />
 
 <a href="https://github.com/ParanoaiDev/obsidian-flora/releases/latest"><img src="https://img.shields.io/github/manifest-json/v/ParanoaiDev/obsidian-flora?style=flat-square&label=version&color=0a84ff&labelColor=1c1c1e" alt="Version" /></a>
+<a href="https://community.obsidian.md/plugins/flora"><img src="https://img.shields.io/badge/community%20directory-listed-7c3aed?style=flat-square&logo=obsidian&logoColor=white&labelColor=1c1c1e" alt="In the Obsidian community directory" /></a>
 <a href="https://obsidian.md"><img src="https://img.shields.io/badge/Obsidian-1.4%2B-7c3aed?style=flat-square&logo=obsidian&logoColor=white&labelColor=1c1c1e" alt="Obsidian 1.4+" /></a>
 <a href="https://github.com/ParanoaiDev/obsidian-flora/releases"><img src="https://img.shields.io/github/downloads/ParanoaiDev/obsidian-flora/total?style=flat-square&color=30d158&labelColor=1c1c1e" alt="Downloads" /></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-ff9f0a?style=flat-square&labelColor=1c1c1e" alt="MIT license" /></a>
@@ -150,14 +151,63 @@ Every part can be switched on and off on its own in **Settings → Flora**.
 
 ## 🚀 Install
 
-Flora is not in the community plugin list yet. Until it is, install it by hand. It takes a minute.
+### From Obsidian (recommended)
+
+Flora is in the official [Obsidian community directory](https://community.obsidian.md/plugins/flora).
+
+1. In Obsidian, open **Settings → Community plugins** and turn on community plugins if they are off.
+2. Select **Browse**, search for **Flora** and select **Install**, then **Enable**.
+
+Or open the [Flora page in the directory](https://community.obsidian.md/plugins/flora) and select **Add to Obsidian**.
+
+### One command
+
+Installs or updates Flora from the latest release. The script finds your vaults, asks which one to use, downloads the plugin into it and turns it on. Your Flora settings are kept.
+
+**Windows** (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/ParanoaiDev/obsidian-flora/main/install.ps1 | iex
+```
+
+**macOS and Linux** (Terminal):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ParanoaiDev/obsidian-flora/main/install.sh | bash
+```
+
+Restart Obsidian afterwards if it was open. You can read both scripts first: [install.ps1](install.ps1), [install.sh](install.sh).
+
+<details>
+<summary><b>Choose the vault yourself</b></summary>
+<br />
+
+Windows:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/ParanoaiDev/obsidian-flora/main/install.ps1))) -Vault "C:\path\to\vault"
+```
+
+macOS and Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ParanoaiDev/obsidian-flora/main/install.sh | bash -s -- "/path/to/vault"
+```
+
+</details>
+
+<details>
+<summary><b>By hand</b></summary>
+<br />
 
 1. Open the [latest release](https://github.com/ParanoaiDev/obsidian-flora/releases/latest) and download `main.js`, `manifest.json` and `styles.css`.
 2. Put the three files into `<your vault>/.obsidian/plugins/flora/`. Create the folder if it doesn't exist.
-3. In Obsidian, open **Settings → Community plugins**, turn on community plugins if needed, and enable **Flora**.
+3. In Obsidian, open **Settings → Community plugins** and enable **Flora**.
+
+</details>
 
 <details>
-<summary><b>Install with BRAT</b></summary>
+<summary><b>With BRAT</b></summary>
 <br />
 
 1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) from the community plugins.
