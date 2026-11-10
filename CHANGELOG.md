@@ -2,6 +2,11 @@
 
 All notable changes to Flora are listed here. Versions follow [semantic versioning](https://semver.org).
 
+## 5.3.2
+
+### Changed
+- The plugin is now listed as **Flora: Neural Graph & Glass UI**, so it is easier to find in the community directory. The plugin id stays `flora`, so existing installs and settings are untouched.
+
 ## 5.3.1
 
 ### Changed
