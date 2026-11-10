@@ -2,6 +2,11 @@
 
 All notable changes to Flora are listed here. Versions follow [semantic versioning](https://semver.org).
 
+## 5.4.1
+
+### Changed
+- The plugin is listed as **Flora** again. The community directory keeps the name a plugin was registered with, so the longer name from 5.3.2 is reverted. Nothing else changed.
+
 ## 5.4.0
 
 ### Added
