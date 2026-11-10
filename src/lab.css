@@ -2,8 +2,9 @@
 /* =========================================================
    Стартовый экран Flora — нейроны-цветы под жидким стеклом
    ========================================================= */
-.ng-lab-host .empty-state { display: none !important; }
-.ng-lab-host { position: relative; padding: 0 !important; overflow: hidden; }
+/* селекторы сильнее правил Obsidian для пустой вкладки */
+.ng-lab-host .empty-state { display: none; }
+.workspace-leaf-content .ng-lab-host.ng-lab-host { position: relative; padding: 0; overflow: hidden; }
 .ng-lab {
   --lab-font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --lab-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
@@ -74,8 +75,8 @@
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   border-radius: inherit; corner-shape: inherit; padding: 1px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.08) 30%, rgba(255, 255, 255, 0) 55%, rgba(255, 255, 255, 0.22) 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
 }
 /* блик сверху */
 .ng-lab .ng-glass::after {

@@ -12,12 +12,12 @@ Ideas for what comes next. Nothing here has a date, and the order can change.
 
 - [ ] Mobile: lighter render settings tuned for phones and tablets
 - [ ] More languages for the interface
-- [ ] Timeline mode for the Neurograph: watch the vault grow note by note
 - [ ] Investigation board: import entities from a canvas, export a case as a report note
 - [ ] Custom palettes for neurons, matched to graph groups
 
 ## Done
 
+- [x] Timeline for the Neurograph, Flora loading screen, a faster engine without shaking neurons (5.4.0)
 - [x] Listed in the Obsidian community directory, plus one-command installers for Windows, macOS and Linux
 - [x] English and Russian interface with a language setting (5.3.0)
 - [x] Flora design for all of Obsidian, start screen, investigation board (5.2.0)

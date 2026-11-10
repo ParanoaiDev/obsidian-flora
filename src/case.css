@@ -169,7 +169,7 @@
 
 /* ---------- связи ---------- */
 .ng-case-links { display: flex; flex-direction: column; border-radius: 16px; corner-shape: squircle; background: var(--cs-card); box-shadow: 0 0 0 1px var(--cs-sep); overflow: hidden; }
-.ng-case-links:has(.ng-case-none) { background: transparent; box-shadow: none; }
+.ng-case-links.is-empty { background: transparent; box-shadow: none; }
 .ng-case-link { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 10px; }
 .ng-case-link + .ng-case-link { box-shadow: inset 0 1px 0 var(--cs-sep); }
 .ng-case-link .ng-case-select { flex: 1 1 150px; min-width: 0; font-size: 13px; }

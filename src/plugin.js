@@ -22,12 +22,28 @@ class NeuralGraphView extends obsidian.ItemView {
     el.addClass("ng-view");
     const wrap = el.createDiv({ cls: "ng-wrap" });
     const canvas = wrap.createEl("canvas");
+    // загрузочный экран: держится, пока ткань раскладывается, и не меньше, чем распускается цветок
+    const loader = floraLoader(wrap);
+    loader.set(L("Собираю заметки", "Gathering notes"));
+    const shownAt = performance.now();
+    let finished = false;
+    const finish = () => {
+      if (finished || !this.renderer) return;
+      finished = true;
+      window.setTimeout(() => { loader.done(); if (this.renderer) this.renderer.hold = false; }, Math.max(0, 1000 - (performance.now() - shownAt)));
+    };
     this.renderer = new NG.NeuralRenderer(canvas, {
       activity: this.plugin.settings.activity,
       onOpen: (n, ev) => this.openNode(n, ev),
+      onProgress: (p) => { if (!finished) loader.set(L("Выращиваю нейроны", "Growing neurons") + "  " + Math.round(p * 100) + "%", p); },
+      onReady: finish,
+      onTimeline: (tl) => this.updateTimeline(tl),
     });
+    this.renderer.hold = true; // ткань проявляется вместе с уходом заставки
+    this._loader = loader;
     this.buildControls(wrap);
     await this.refresh();
+    if (this.renderer && !this.renderer.nodes.length) finish(); // пустое хранилище
 
     const later = () => { window.clearTimeout(this._timer); this._timer = window.setTimeout(() => this.refresh(), 1200); };
     this.registerEvent(this.app.metadataCache.on("resolved", later));
@@ -39,6 +55,8 @@ class NeuralGraphView extends obsidian.ItemView {
 
   async onClose() {
     window.clearTimeout(this._timer);
+    if (this._loader) { this._loader.remove(); this._loader = null; }
+    this.closeTimeline();
     if (this.renderer) this.renderer.destroy();
     this.renderer = null;
   }
@@ -53,6 +71,7 @@ class NeuralGraphView extends obsidian.ItemView {
       const b = parent.createEl("button", { cls: "ng-ctl-btn", attr: { "aria-label": title } });
       if (icon) ico(b.createSpan({ cls: "ng-ctl-ico" }), icon);
       if (label) b.createSpan({ cls: "ng-ctl-text", text: label });
+      else b.addClass("is-icon");
       return b;
     };
     // фильтры
@@ -84,6 +103,142 @@ class NeuralGraphView extends obsidian.ItemView {
     };
     const fit = btn(view, "scan", "", L("Показать всё (или двойной клик по фону)", "Fit all (or double-click the background)"));
     fit.onclick = () => this.renderer.fit(false);
+    // таймлайн
+    const tlBtn = btn(view, "history", L("Таймлайн", "Timeline"), L("Посмотреть, как росло хранилище", "Watch your vault grow note by note"));
+    tlBtn.onclick = () => {
+      const on = !this.tlBar;
+      tlBtn.toggleClass("is-on", on);
+      if (on) this.openTimeline(wrap); else this.closeTimeline();
+    };
+    this.tlBtn = tlBtn;
+  }
+
+  /* ---------- таймлайн ---------- */
+  openTimeline(wrap) {
+    const R = this.renderer;
+    if (!R || this.tlBar) return;
+    R.timeline(true);
+    R.fit(false);
+    const ico = (el, name) => { if (typeof obsidian.setIcon === "function") { el.empty(); obsidian.setIcon(el, name); } };
+    const bar = wrap.createDiv({ cls: "ng-tl" });
+    const play = bar.createEl("button", { cls: "ng-tl-btn ng-tl-play", attr: { "aria-label": L("Пауза", "Pause") } });
+    const info = bar.createDiv({ cls: "ng-tl-info" });
+    const date = info.createDiv({ cls: "ng-tl-date" });
+    const count = info.createDiv({ cls: "ng-tl-count" });
+    const track = bar.createDiv({ cls: "ng-tl-track" });
+    const rail = track.createDiv({ cls: "ng-tl-rail" });
+    const fill = rail.createDiv({ cls: "ng-tl-fill" });
+    const ticks = track.createDiv({ cls: "ng-tl-ticks" });
+    const thumb = track.createDiv({ cls: "ng-tl-thumb" });
+    const speed = bar.createEl("button", { cls: "ng-tl-btn ng-tl-speed", text: "×1", attr: { "aria-label": L("Скорость", "Speed") } });
+    const close = bar.createEl("button", { cls: "ng-tl-btn ng-tl-close", attr: { "aria-label": L("Закрыть таймлайн", "Close the timeline") } });
+    ico(close, "x");
+    track.setAttribute("role", "slider");
+    track.setAttribute("aria-label", L("Время", "Time"));
+    track.tabIndex = 0;
+
+    // отметки лет (или месяцев, если история короче года)
+    const B = R.tl.B, t0 = B[0], t1 = B[B.length - 1];
+    if (B.length > 1 && t1 > t0) {
+      const yearly = t1 - t0 > 400 * 864e5;
+      const d = new Date(t0);
+      let cur = yearly ? new Date(d.getFullYear() + 1, 0, 1) : new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      let lastPos = -1, guard = 0;
+      while (cur.getTime() <= t1 && guard++ < 400) {
+        const pos = R.tlPos(cur.getTime() - 1);
+        const tick = ticks.createDiv({ cls: "ng-tl-tick" });
+        tick.style.setProperty("--x", String(pos));
+        if (pos - lastPos > 0.09 && pos < 0.94) {
+          tick.addClass("has-label");
+          tick.setAttribute("data-label", yearly ? String(cur.getFullYear()) : cur.toLocaleDateString(FLORA_LANG === "ru" ? "ru-RU" : "en-US", { month: "short" }));
+          lastPos = pos;
+        }
+        cur = yearly ? new Date(cur.getFullYear() + 1, 0, 1) : new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+      }
+    }
+
+    const speeds = [1, 2, 4, 0.5];
+    speed.onclick = () => {
+      const i = speeds.indexOf(R.tl.speed);
+      R.tl.speed = speeds[(i + 1) % speeds.length];
+      speed.setText("×" + (R.tl.speed === 0.5 ? "½" : R.tl.speed));
+    };
+    play.onclick = () => {
+      const tl = R.tl;
+      if (!tl) return;
+      if (!tl.playing && tl.p >= 1) R.tlSeek(0);
+      tl.playing = !tl.playing;
+      this.updateTimeline(tl, true);
+    };
+    close.onclick = () => { this.tlBtn && this.tlBtn.toggleClass("is-on", false); this.closeTimeline(); };
+    // перемотка: тянем по шкале
+    const seekAt = (ev) => {
+      const rc = rail.getBoundingClientRect();
+      R.tlSeek((ev.clientX - rc.left) / Math.max(1, rc.width));
+      this.updateTimeline(R.tl, true);
+    };
+    track.addEventListener("pointerdown", (ev) => {
+      track.setPointerCapture(ev.pointerId);
+      this.tlWasPlaying = R.tl.playing;
+      R.tl.playing = false;
+      this.tlDrag = true;
+      track.addClass("is-dragging");
+      seekAt(ev);
+    });
+    track.addEventListener("pointermove", (ev) => { if (this.tlDrag) seekAt(ev); });
+    const endDrag = () => { if (!this.tlDrag) return; this.tlDrag = false; track.removeClass("is-dragging"); if (this.tlWasPlaying && R.tl && R.tl.p < 1) R.tl.playing = true; };
+    track.addEventListener("pointerup", endDrag);
+    track.addEventListener("pointercancel", endDrag);
+    track.addEventListener("keydown", (ev) => {
+      const step = ev.shiftKey ? 0.1 : 0.02;
+      if (ev.key === "ArrowRight") R.tlSeek(R.tl.p + step);
+      else if (ev.key === "ArrowLeft") R.tlSeek(R.tl.p - step);
+      else if (ev.key === " ") { play.click(); }
+      else return;
+      ev.preventDefault();
+      this.updateTimeline(R.tl, true);
+    });
+
+    this.tlBar = bar;
+    this.tlEls = { play, date, count, fill, thumb, track, ico, last: {} };
+    this.updateTimeline(R.tl, true);
+  }
+
+  updateTimeline(tl, force) {
+    const E = this.tlEls;
+    if (!E || !tl) return;
+    const last = E.last;
+    const p = Math.round(tl.p * 1000) / 1000;
+    if (force || p !== last.p) {
+      last.p = p;
+      E.fill.style.setProperty("--p", String(p));
+      E.thumb.style.setProperty("--p", String(p));
+      E.track.setAttribute("aria-valuenow", String(Math.round(p * 100)));
+    }
+    const t = this.renderer.tlTime(tl.p);
+    const B = tl.B || [];
+    const born = Math.round(tl.p * B.length);
+    const dayKey = born ? new Date(t).toDateString() : "";
+    if (force || dayKey !== last.day) {
+      last.day = dayKey;
+      E.date.setText(born ? new Date(t).toLocaleDateString(FLORA_LANG === "ru" ? "ru-RU" : "en-US", { day: "numeric", month: "long", year: "numeric" }) : L("Начало", "The beginning"));
+    }
+    if (force || born !== last.born) {
+      last.born = born;
+      E.count.setText(floraNum(born) + " " + plural(born, ["нейрон", "нейрона", "нейронов"], ["neuron", "neurons"]));
+    }
+    const state = tl.playing ? "pause" : tl.p >= 1 ? "rotate-ccw" : "play";
+    if (force || state !== last.state) {
+      last.state = state;
+      E.ico(E.play, state);
+      E.play.setAttribute("aria-label", tl.playing ? L("Пауза", "Pause") : tl.p >= 1 ? L("Сначала", "Replay") : L("Играть", "Play"));
+    }
+  }
+
+  closeTimeline() {
+    if (this.renderer) this.renderer.timeline(false);
+    if (this.tlBar) this.tlBar.remove();
+    this.tlBar = null; this.tlEls = null; this.tlDrag = false;
   }
 
   async collect() {
@@ -100,9 +255,18 @@ class NeuralGraphView extends obsidian.ItemView {
       if (f.extension !== "canvas") continue;
       try { canvases[f.path] = JSON.parse((await app.vault.cachedRead(f)) || "{}"); } catch { /* битый холст — пропускаем */ }
     }
+    // когда появилась каждая заметка: самое раннее из даты создания, изменения и даты в имени файла
+    const times = {};
+    for (const f of all) {
+      const st = f.stat || {};
+      let t = Math.min(st.ctime || Infinity, st.mtime || Infinity);
+      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(f.basename || "");
+      if (m) { const d = new Date(+m[1], +m[2] - 1, +m[3]).getTime(); if (d > 0 && d < t) t = d; }
+      if (t < Infinity) times[f.path] = t;
+    }
     const s = this.plugin.settings;
     return NG.buildGraph({
-      files, links, canvases,
+      files, links, canvases, times,
       resolve: (l, from) => { const f = app.metadataCache.getFirstLinkpathDest(l, from); return f ? f.path : "?" + l; },
       cards: s.cards, orphans: s.orphans, unresolved: s.unresolved,
     });

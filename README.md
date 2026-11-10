@@ -51,6 +51,8 @@ Glass sidebars, capsule tabs and a floating status bar over a soft colored backd
 ### 🧠 Neurograph
 A view of your whole vault as living tissue. Big notes grow crowns of dendrites, links carry pulses from cell to cell, canvases bloom into their own clusters. Hover a cell to light it up, click to open the note.
 
+**Timeline** replays how the vault grew: notes bloom in the order you created them and links grow between them. Play it, change the speed or drag to any date.
+
 </td>
 </tr>
 <tr>
@@ -274,6 +276,7 @@ The Neurograph and the investigation board also have their own icons in the left
 
 - **One GPU pass.** The living layers are drawn with WebGL2: HDR bloom, ACES tone mapping and instanced cells in a single canvas per view.
 - **Frame budget.** 30 fps when idle, 60 while you drag or zoom, 12 when the window is in the background. Embedded views (the journal band, the case map) pause when you scroll them out of sight.
+- **No freezes.** The layout is computed between frames behind a loading screen, and the physics runs on typed arrays without allocating per frame.
 - **Zero dependencies.** A single `main.js` and a single `styles.css`, built by a 25-line script.
 - **No network.** Flora never sends or fetches anything. See [PRIVACY.md](PRIVACY.md).
 

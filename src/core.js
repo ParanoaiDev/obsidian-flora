@@ -28,6 +28,70 @@ function floraLazy(build) {
   return function () { if (lang !== FLORA_LANG) { v = build(); lang = FLORA_LANG; } return v; };
 }
 
+/* Загрузочный экран Flora: цветок из пяти стеклянных лепестков распускается,
+   пока ткань собирается. floraLoader(host) → { set(text, progress), done() }. */
+let floraLoaderSeq = 0;
+function floraLoader(host) {
+  const doc = host.ownerDocument || floraDoc();
+  const NS = "http://www.w3.org/2000/svg";
+  const svgEl = (tag, attrs, parent) => {
+    const e = doc.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const div = (cls, parent) => { const e = doc.createElement("div"); e.className = cls; parent.appendChild(e); return e; };
+  const root = div("ng-loader", host);
+  root.setAttribute("role", "status");
+  const stage = div("ng-loader-stage", root);
+  const id = "flora-ld" + ++floraLoaderSeq;
+  const svg = svgEl("svg", { viewBox: "0 0 256 256", class: "ng-loader-flower", "aria-hidden": "true" }, stage);
+  const defs = svgEl("defs", {}, svg);
+  const colors = [["#0a63ff", "#7fd6ff"], ["#ff8a00", "#ffdf8a"], ["#8a2cff", "#ebbcff"], ["#ff2d55", "#ffb0a3"], ["#12a650", "#a6f5bb"]];
+  colors.forEach((c, i) => {
+    const g = svgEl("linearGradient", { id: id + "p" + i, x1: "0", y1: "1", x2: "0", y2: "0" }, defs);
+    svgEl("stop", { offset: "0.1", "stop-color": c[0] }, g);
+    svgEl("stop", { offset: "1", "stop-color": c[1] }, g);
+  });
+  const halo = svgEl("radialGradient", { id: id + "h", cx: "0.5", cy: "0.5", r: "0.5" }, defs);
+  svgEl("stop", { offset: "0", "stop-color": "#fff", "stop-opacity": "0.9" }, halo);
+  svgEl("stop", { offset: "0.35", "stop-color": "#fff", "stop-opacity": "0.35" }, halo);
+  svgEl("stop", { offset: "1", "stop-color": "#fff", "stop-opacity": "0" }, halo);
+  const petals = svgEl("g", { class: "ng-loader-petals" }, svg);
+  for (let i = 0; i < 5; i++) {
+    const wrap = svgEl("g", { transform: "rotate(" + i * 72 + " 128 128)" }, petals);
+    const p = svgEl("g", { class: "ng-loader-petal" }, wrap);
+    p.style.setProperty("--i", String(i));
+    svgEl("path", { d: "M128 134 C 94 118, 78 66, 108 34 Q 128 14, 148 34 C 178 66, 162 118, 128 134 Z", fill: "url(#" + id + "p" + i + ")" }, p);
+    svgEl("path", { d: "M128 116 C 125 92, 125 64, 128 38", fill: "none", stroke: "#fff", "stroke-opacity": "0.55", "stroke-width": "2.4", "stroke-linecap": "round" }, p);
+  }
+  svgEl("circle", { cx: "128", cy: "128", r: "40", fill: "url(#" + id + "h)", class: "ng-loader-halo" }, svg);
+  svgEl("circle", { cx: "128", cy: "128", r: "11", fill: "#fff", class: "ng-loader-core" }, svg);
+  div("ng-loader-ripple", stage);
+  const name = div("ng-loader-name", root);
+  name.textContent = "Flora";
+  const text = div("ng-loader-text", root);
+  const bar = div("ng-loader-bar", root);
+  const fill = div("ng-loader-fill", bar);
+  let gone = false;
+  return {
+    set(t, progress) {
+      if (gone) return;
+      if (t != null && text.textContent !== t) text.textContent = t;
+      if (progress == null) root.classList.remove("has-progress");
+      else { root.classList.add("has-progress"); fill.style.setProperty("--p", String(Math.max(0, Math.min(1, progress)))); }
+    },
+    done() {
+      if (gone) return;
+      gone = true;
+      root.classList.add("is-done");
+      const win = doc.defaultView || window;
+      win.setTimeout(() => root.remove(), 700);
+    },
+    remove() { gone = true; root.remove(); },
+  };
+}
+
 /* Нейрограф — ядро: сборка графа + живой рендер (Canvas 2D).
    Без зависимостей. Используется и в плагине Obsidian, и в тестовой странице. */
 const NG = (function () {
@@ -164,14 +228,16 @@ const NG = (function () {
       }
       if (made.length > 7) arborize(hubId, made, level + 1);
     };
+    // листья каждой заметки собираем за один проход по связям, а не перебором всех связей для каждой заметки
+    const leavesOf = new Map();
+    for (const e of edges.values()) {
+      if (deg[e.b] === 1) { const l = leavesOf.get(e.a); if (l) l.push(e.b); else leavesOf.set(e.a, [e.b]); }
+      if (deg[e.a] === 1) { const l = leavesOf.get(e.b); if (l) l.push(e.a); else leavesOf.set(e.b, [e.a]); }
+    }
     for (const n of [...nodes.values()]) {
       if (n.kind === "branch" || n.kind === "attachment") continue;
-      const leaves = [];
-      for (const e of edges.values()) {
-        const other = e.a === n.id ? e.b : e.b === n.id ? e.a : null;
-        if (other && deg[other] === 1) leaves.push(other);
-      }
-      if (leaves.length > 11) arborize(n.id, leaves, 0);
+      const leaves = leavesOf.get(n.id);
+      if (leaves && leaves.length > 11) arborize(n.id, leaves, 0);
     }
     deg = degOf();
     let list = [...nodes.values()];
@@ -180,6 +246,41 @@ const NG = (function () {
     list = list.filter((n) => !(n.kind === "canvas" && !deg[n.id] && !o.orphans));
     const keep = new Set(list.map((n) => n.id));
     for (const n of list) n.deg = deg[n.id] || 0;
+
+    // Когда клетка «родилась» — для таймлайна. Файлы берут своё время, карточки — время холста,
+    // пустые ссылки и точки ветвления — время самого раннего соседа.
+    if (o.times) {
+      const byIdL = new Map(list.map((n) => [n.id, n]));
+      const nb = new Map();
+      for (const e of edges.values()) {
+        if (!keep.has(e.a) || !keep.has(e.b)) continue;
+        (nb.get(e.a) || nb.set(e.a, []).get(e.a)).push(e.b);
+        (nb.get(e.b) || nb.set(e.b, []).get(e.b)).push(e.a);
+      }
+      for (const n of list) {
+        const t = n.kind === "card" ? o.times[n.parent] : n.path ? o.times[n.path] : undefined;
+        if (t != null) n.born = t;
+      }
+      const earliest = (n, skip) => {
+        let t = Infinity;
+        for (const id of nb.get(n.id) || []) { if (id === skip) continue; const m = byIdL.get(id); if (m && m.born != null && m.born < t) t = m.born; }
+        return t;
+      };
+      for (const n of list) if (n.kind === "unresolved") { const t = earliest(n); if (t < Infinity) n.born = t; }
+      // ветки — вместе с первым своим листом (сначала ветки нижнего уровня)
+      const branches = list.filter((n) => n.kind === "branch");
+      const lvl = (n) => +(n.id.slice(n.id.lastIndexOf("::") + 2).split(":")[0]) || 0;
+      branches.sort((p, q) => lvl(p) - lvl(q));
+      for (const n of branches) {
+        const hub = n.id.slice(0, n.id.lastIndexOf("::"));
+        const t = earliest(n, hub);
+        const h = byIdL.get(hub);
+        if (t < Infinity) n.born = h && h.born != null ? Math.max(t, h.born) : t;
+      }
+      let t0 = Infinity;
+      for (const n of list) if (n.born != null && n.born < t0) t0 = n.born;
+      for (const n of list) if (n.born == null) n.born = t0 < Infinity ? t0 : 0;
+    }
 
     // цвета по папкам: самые большие группы получают первые цвета палитры
     const gcount = {};
@@ -214,6 +315,8 @@ const NG = (function () {
   /* ------------------------------------------------------------------ */
 
   // сколько кадров рисовать: в покое — экономно, при взаимодействии — плавно
+  const WARM_STEPS = 420; // шагов физики, чтобы новая ткань разложилась до показа
+
   function frameGate(self, now, busy, maxFps, doc) {
     let fps = busy ? 60 : (maxFps || 30);
     if (doc && typeof doc.hasFocus === "function" && !doc.hasFocus()) fps = Math.min(fps, 12);
@@ -273,7 +376,7 @@ const NG = (function () {
         const node = Object.assign(n, {
           rgb: hexRgb(n.color),
           r: this._radius(n),
-          x: o ? o.x : n.x || 0, y: o ? o.y : n.y || 0, vx: 0, vy: 0,
+          x: o ? o.x : n.x || 0, y: o ? o.y : n.y || 0, vx: o ? o.vx : 0, vy: o ? o.vy : 0,
           phase: R() * Math.PI * 2,
           v: 0, flash: o ? o.flash : 0, refr: 0,
           rate: n.kind === "branch" ? 0 : 0.012 + 0.012 * Math.sqrt(n.deg),
@@ -282,6 +385,8 @@ const NG = (function () {
           seeded: !!o,
         });
         node.r0 = node.r;
+        node.tv = o && o.tv != null ? o.tv : 1; // видимость в таймлайне: 0 — ещё не родилась
+        node.shown = o ? o.shown : true;
         node.dend = this._dendrites(node, R);
         if (!(n.group in groupsSeen)) groupsSeen[n.group] = gi++;
         node.gi = groupsSeen[n.group];
@@ -294,7 +399,7 @@ const NG = (function () {
         const a = this.byId.get(e.a), b = this.byId.get(e.b);
         if (!a || !b) continue;
         const R = rand(e.a + "|" + e.b);
-        const edge = { a, b, w: e.w, phase: R() * 6.283, bend: (R() - 0.5) * 0.5, cx: 0, cy: 0, len: 1, idx: this.edges.length };
+        const edge = { a, b, w: e.w, phase: R() * 6.283, bend: (R() - 0.5) * 0.5, cx: 0, cy: 0, len: 1, idx: this.edges.length, tv: 1, on: true };
         // длина «отростка» чуть разная — кроны получаются неровными, живыми
         edge.lv = a.deg <= 1 || b.deg <= 1 ? 0.5 + R() * 1.3 : 0.85 + R() * 0.4;
         // толстый конец — у более крупного тела
@@ -304,6 +409,10 @@ const NG = (function () {
         edge.fromA = big === a;
         edge.w0 = Math.min(Math.max(big.r * 0.5, 0.9), 0.9 + 0.5 * Math.sqrt(e.w));
         edge.w1 = Math.max(0.45, edge.w0 * (b.kind === "branch" || a.kind === "branch" ? 0.55 : 0.3));
+        // пружина: длина покоя, жёсткость и доля сдвига для каждого конца не меняются между кадрами
+        edge.rest = (16 + 3.2 * (a.r + b.r) + (a.kind === "card" || b.kind === "card" ? 4 : 0)) * edge.lv;
+        edge.k = a.kind === "branch" || b.kind === "branch" ? 0.75 : 0.9 / Math.min(a.deg || 1, b.deg || 1);
+        edge.bias = (a.deg || 1) / ((a.deg || 1) + (b.deg || 1));
         this.edges.push(edge);
         a.adj.push(edge); b.adj.push(edge);
       }
@@ -326,15 +435,63 @@ const NG = (function () {
         const R = rand("leaf" + n.id), a = R() * Math.PI * 2, d = 30 + R() * 60;
         n.x = o.x + Math.cos(a) * d; n.y = o.y + Math.sin(a) * d;
       }
-      this.signals = this.signals.filter((s) => this.edges.includes(s.e));
-      this.alpha = fresh.length ? 1 : Math.max(this.alpha, 0.3);
-      if (!this.opts.external && fresh.length === this.nodes.length) {
-        for (let i = 0; i < 420; i++) this._physics(1 / 60);
-        this.fade = 0;
-        this._needFit = true;
-        this.fit(true);
+      // новые клетки в уже разложенном графе появляются рядом со своими соседями
+      if (fresh.length && fresh.length < this.nodes.length) {
+        for (const n of fresh) {
+          let sx = 0, sy = 0, k = 0;
+          for (const e of n.adj) { const o = e.a === n ? e.b : e.a; if (o.seeded) { sx += o.x; sy += o.y; k++; } }
+          if (!k) continue;
+          const R = rand("near" + n.id), a = R() * Math.PI * 2, d = 24 + R() * 40;
+          n.x = sx / k + Math.cos(a) * d; n.y = sy / k + Math.sin(a) * d;
+        }
       }
+      // старые импульсы переносим на новые связи
+      const oldEdges = new Map();
+      for (const e of this._prevEdges || []) oldEdges.set(e.a.id + "\u0000" + e.b.id, e);
+      let same = !fresh.length && old.size === this.byId.size && oldEdges.size === this.edges.length;
+      const edgeOf = new Map();
+      for (const e of this.edges) {
+        const k = e.a.id + "\u0000" + e.b.id;
+        edgeOf.set(k, e);
+        const pe = oldEdges.get(k);
+        if (pe) { e.len = pe.len; e.cx = pe.cx; e.cy = pe.cy; e.tv = pe.tv; e.on = pe.on; } else same = false;
+      }
+      this.signals = this.signals.filter((s) => { const e = edgeOf.get(s.e.a.id + "\u0000" + s.e.b.id); if (!e) return false; s.e = e; s.src = this.byId.get(s.src.id) || s.src; return true; });
+      this.rings = this.rings.filter((r) => { const n = this.byId.get(r.n.id); if (!n) return false; r.n = n; return true; });
+      this._prevEdges = this.edges;
+      // Граф не изменился (Obsidian просто пересчитал ссылки) — не трогаем физику,
+      // иначе вся ткань вздрагивает после каждой правки заметки.
+      if (!same) this.alpha = fresh.length === this.nodes.length ? 1 : Math.max(this.alpha, fresh.length ? 0.4 : 0.3);
       this._edgeBuckets();
+      if (this.tl) this._tlIndex();
+      if (!this.opts.external && fresh.length === this.nodes.length) {
+        // Раскладка «с нуля» считается по кусочкам между кадрами, а не одним блоком:
+        // Obsidian не замирает, а вид в это время может показать загрузочный экран.
+        this.fade = 0;
+        this._warm = this.nodes.length ? WARM_STEPS : 0;
+        this._warmStep(this.opts.warmBudget || 14);
+      } else if (this._warm) {
+        this._warm = 0; this._warmDone();
+      }
+    }
+
+    // сколько из раскладки уже готово: от 0 до 1
+    get progress() { return this._warm ? 1 - this._warm / WARM_STEPS : 1; }
+    get ready() { return !this._warm; }
+    _warmStep(budget) {
+      const t0 = performance.now();
+      while (this._warm > 0) {
+        this._physics();
+        this._warm--;
+        if ((this._warm & 3) === 0 && performance.now() - t0 > budget) break;
+      }
+      if (this.opts.onProgress) this.opts.onProgress(this.progress);
+      if (!this._warm) this._warmDone();
+    }
+    _warmDone() {
+      this._needFit = true;
+      this.fit(true);
+      if (this.opts.onReady) this.opts.onReady();
     }
 
     _radius(n) {
@@ -409,75 +566,122 @@ const NG = (function () {
     }
 
     /* ---------- физика (как d3-force, с Barnes–Hut) ---------- */
-    _physics(dt) {
-      const nodes = this.nodes, alpha = this.alpha;
-      if (!nodes.length) return;
-      // квадродерево
+    // Квадродерево живёт в типизированных массивах и переиспользуется между кадрами:
+    // ни одного нового объекта за кадр, поэтому физика в несколько раз быстрее и не дёргает сборщик мусора.
+    _pool(N) {
+      let P = this._pp;
+      if (!P || P.cap < N) {
+        const cap = Math.max(64, Math.ceil(N * 1.5));
+        P = this._pp = { cap, X: new Float64Array(cap), Y: new Float64Array(cap), Q: new Float64Array(cap), next: new Int32Array(cap), stack: new Int32Array(64 * 4 + 16), ccap: 0 };
+      }
+      if (P.ccap < N * 3 + 16) this._cells(P, N * 3 + 16);
+      return P;
+    }
+    _cells(P, cap) {
+      const grow = (A, T) => { const B = new T(cap); if (A) B.set(A.subarray(0, Math.min(A.length, cap))); return B; };
+      P.OX = grow(P.OX, Float64Array); P.OY = grow(P.OY, Float64Array); P.S = grow(P.S, Float64Array);
+      P.M = grow(P.M, Float64Array); P.CX = grow(P.CX, Float64Array); P.CY = grow(P.CY, Float64Array);
+      P.kid = grow(P.kid, Int32Array); P.head = grow(P.head, Int32Array);
+      P.ccap = cap;
+    }
+    _physics(half) {
+      const nodes = this.nodes, N = nodes.length, alpha = this.alpha;
+      if (!N) return;
+      const P = this._pool(N);
+      const X = P.X, Y = P.Y, Q = P.Q, next = P.next;
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      for (const n of nodes) { if (n.x < minX) minX = n.x; if (n.y < minY) minY = n.y; if (n.x > maxX) maxX = n.x; if (n.y > maxY) maxY = n.y; }
-      const size = Math.max(maxX - minX, maxY - minY) + 1;
-      const root = { x: minX, y: minY, s: size, n: null, k: null, m: 0, cx: 0, cy: 0 };
-      const insert = (cell, n, depth) => {
+      for (let i = 0; i < N; i++) {
+        const n = nodes[i], x = n.x, y = n.y;
+        X[i] = x; Y[i] = y; Q[i] = n.q;
+        if (x < minX) minX = x; if (y < minY) minY = y; if (x > maxX) maxX = x; if (y > maxY) maxY = y;
+      }
+      // квадродерево
+      let count = 1;
+      P.OX[0] = minX; P.OY[0] = minY; P.S[0] = Math.max(maxX - minX, maxY - minY) + 1; P.kid[0] = -1; P.head[0] = -1;
+      for (let i = 0; i < N; i++) {
+        let c = 0, depth = 0;
         for (;;) {
-          if (!cell.k) {
-            if (!cell.n) { cell.n = n; return; }
-            if (depth > 18) { (cell.extra = cell.extra || []).push(n); return; }
-            const old = cell.n; cell.n = null;
-            const h = cell.s / 2;
-            cell.k = [
-              { x: cell.x, y: cell.y, s: h, n: null, k: null, m: 0, cx: 0, cy: 0 },
-              { x: cell.x + h, y: cell.y, s: h, n: null, k: null, m: 0, cx: 0, cy: 0 },
-              { x: cell.x, y: cell.y + h, s: h, n: null, k: null, m: 0, cx: 0, cy: 0 },
-              { x: cell.x + h, y: cell.y + h, s: h, n: null, k: null, m: 0, cx: 0, cy: 0 },
-            ];
-            const oi = (old.x >= cell.x + h ? 1 : 0) + (old.y >= cell.y + h ? 2 : 0);
-            insert(cell.k[oi], old, depth + 1);
+          if (P.kid[c] < 0) {
+            const h0 = P.head[c];
+            if (h0 < 0) { P.head[c] = i; next[i] = -1; break; }
+            if (depth > 18) { next[i] = h0; P.head[c] = i; break; } // совпавшие точки — в одну ячейку
+            if (count + 4 > P.ccap) this._cells(P, P.ccap * 2);
+            const h = P.S[c] / 2, k = count;
+            count += 4;
+            for (let j = 0; j < 4; j++) {
+              P.OX[k + j] = P.OX[c] + (j & 1 ? h : 0); P.OY[k + j] = P.OY[c] + (j & 2 ? h : 0);
+              P.S[k + j] = h; P.kid[k + j] = -1; P.head[k + j] = -1;
+            }
+            P.kid[c] = k; P.head[c] = -1;
+            const oi = k + (X[h0] >= P.OX[c] + h ? 1 : 0) + (Y[h0] >= P.OY[c] + h ? 2 : 0);
+            P.head[oi] = h0; next[h0] = -1;
           }
-          const h = cell.s / 2;
-          cell = cell.k[(n.x >= cell.x + h ? 1 : 0) + (n.y >= cell.y + h ? 2 : 0)];
+          const h = P.S[c] / 2;
+          c = P.kid[c] + (X[i] >= P.OX[c] + h ? 1 : 0) + (Y[i] >= P.OY[c] + h ? 2 : 0);
           depth++;
         }
-      };
-      for (const n of nodes) insert(root, n, 0);
-      const mass = (cell) => {
-        if (cell.k) {
-          let m = 0, cx = 0, cy = 0;
-          for (const k of cell.k) { mass(k); m += k.m; cx += k.cx * k.m; cy += k.cy * k.m; }
-          cell.m = m; cell.cx = m ? cx / m : 0; cell.cy = m ? cy / m : 0;
-        } else if (cell.n) {
-          let m = cell.n.q, cx = cell.n.x * cell.n.q, cy = cell.n.y * cell.n.q;
-          if (cell.extra) for (const e of cell.extra) { m += e.q; cx += e.x * e.q; cy += e.y * e.q; }
-          cell.m = m; cell.cx = cx / m; cell.cy = cy / m;
+      }
+      const S = P.S, M = P.M, CX = P.CX, CY = P.CY, kid = P.kid, head = P.head;
+      // массы снизу вверх: дети всегда записаны после родителя
+      for (let c = count - 1; c >= 0; c--) {
+        const k = kid[c];
+        let m = 0, cx = 0, cy = 0;
+        if (k >= 0) {
+          for (let j = k; j < k + 4; j++) { const mj = M[j]; m += mj; cx += CX[j] * mj; cy += CY[j] * mj; }
+        } else {
+          for (let j = head[c]; j >= 0; j = next[j]) { m += Q[j]; cx += X[j] * Q[j]; cy += Y[j] * Q[j]; }
         }
-      };
-      mass(root);
-      const STR = -32, theta2 = 0.81, maxD2 = 900 * 900;
-      for (const n of nodes) {
-        const stack = [root];
-        while (stack.length) {
-          const c = stack.pop();
-          if (!c.m) continue;
-          let dx = c.cx - n.x, dy = c.cy - n.y, d2 = dx * dx + dy * dy;
-          if (d2 > maxD2) continue;
-          if (c.k && (c.s * c.s) / d2 > theta2) { stack.push(c.k[0], c.k[1], c.k[2], c.k[3]); continue; }
-          if (!c.k && c.n === n && !c.extra) continue;
-          if (d2 < 1) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 1; }
-          if (d2 < 25) d2 = Math.sqrt(25 * d2);
-          const m = c.n === n ? c.m - n.q : c.m;
-          const f = (STR * m * n.q * alpha) / d2;
-          n.vx += dx * f; n.vy += dy * f;
+        M[c] = m; CX[c] = m ? cx / m : 0; CY[c] = m ? cy / m : 0;
+      }
+      // Отталкивание действует до 900 px и плавно сходит на нет к 1100 px.
+      // Раньше оно обрывалось на 900 px скачком: когда центр массы дальней группы
+      // пересекал границу, клетка получала толчок, и нейроны мелко тряслись.
+      const STR = -32, theta2 = 0.81, cut0 = 900 * 900, cut1 = 1100 * 1100, cutK = 1 / (cut1 - cut0);
+      if (P.stack.length < count) P.stack = new Int32Array(count + 16);
+      const stack = P.stack;
+      for (let i = 0; i < N; i++) {
+        const n = nodes[i], xi = X[i], yi = Y[i], k0 = STR * Q[i] * alpha;
+        let fx = 0, fy = 0, sp = 0;
+        stack[sp++] = 0;
+        while (sp) {
+          const c = stack[--sp];
+          const mc = M[c];
+          if (!mc) continue;
+          let dx = CX[c] - xi, dy = CY[c] - yi, d2 = dx * dx + dy * dy;
+          const k = kid[c];
+          if (k >= 0) {
+            if (S[c] * S[c] > theta2 * d2) { stack[sp++] = k; stack[sp++] = k + 1; stack[sp++] = k + 2; stack[sp++] = k + 3; continue; }
+            if (d2 >= cut1) continue;
+            if (d2 < 1) { dx = Math.cos(n.phase) * 0.5; dy = Math.sin(n.phase) * 0.5; d2 = 1; }
+            const fall = d2 > cut0 ? (cut1 - d2) * cutK : 1;
+            if (d2 < 25) d2 = Math.sqrt(25 * d2);
+            const f = (k0 * mc * fall) / d2;
+            fx += dx * f; fy += dy * f;
+          } else {
+            if (d2 >= cut1 && head[c] !== i) continue;
+            for (let j = head[c]; j >= 0; j = next[j]) {
+              if (j === i) continue;
+              dx = X[j] - xi; dy = Y[j] - yi; d2 = dx * dx + dy * dy;
+              if (d2 >= cut1) continue;
+              // совпавшие точки расталкиваем в постоянную сторону, без случайного дрожания
+              if (d2 < 1) { dx = Math.cos(n.phase) * 0.5; dy = Math.sin(n.phase) * 0.5; d2 = 1; }
+              const fall = d2 > cut0 ? (cut1 - d2) * cutK : 1;
+              if (d2 < 25) d2 = Math.sqrt(25 * d2);
+              const f = (k0 * Q[j] * fall) / d2;
+              fx += dx * f; fy += dy * f;
+            }
+          }
         }
+        n.vx += fx; n.vy += fy;
       }
       // пружины
       for (const e of this.edges) {
         const a = e.a, b = e.b;
-        const L = (16 + 3.2 * (a.r + b.r) + (a.kind === "card" || b.kind === "card" ? 4 : 0)) * e.lv;
         let dx = b.x + b.vx - a.x - a.vx, dy = b.y + b.vy - a.y - a.vy;
         let l = Math.sqrt(dx * dx + dy * dy) || 1;
-        const s = a.kind === "branch" || b.kind === "branch" ? 0.75 : 0.9 / Math.min(a.deg || 1, b.deg || 1);
-        l = ((l - L) / l) * alpha * s;
+        l = ((l - e.rest) / l) * alpha * e.k;
         dx *= l; dy *= l;
-        const bias = (a.deg || 1) / ((a.deg || 1) + (b.deg || 1));
+        const bias = e.bias;
         b.vx -= dx * bias; b.vy -= dy * bias;
         a.vx += dx * (1 - bias); a.vy += dy * (1 - bias);
       }
@@ -489,14 +693,92 @@ const NG = (function () {
         n.vx += Math.sin(t * 0.37 + n.phase) * 0.012;
         n.vy += Math.cos(t * 0.31 + n.phase * 1.3) * 0.012;
       }
+      // half — когда физика считается через кадр: вторую половину шага сделает _glide(),
+      // и клетки плывут ровно, а не прыгают раз в два кадра
+      const step = half ? 0.5 : 1;
       for (const n of nodes) {
         if (this.drag && this.drag.node === n) { n.vx = n.vy = 0; continue; }
         n.vx *= 0.6; n.vy *= 0.6;
         const sp = n.vx * n.vx + n.vy * n.vy;
         if (sp > 400) { const k = 20 / Math.sqrt(sp); n.vx *= k; n.vy *= k; }
-        n.x += n.vx; n.y += n.vy;
+        n.x += n.vx * step; n.y += n.vy * step;
       }
       this.alpha += (0.035 - this.alpha) * 0.007;
+    }
+    _glide() {
+      for (const n of this.nodes) {
+        if (this.drag && this.drag.node === n) continue;
+        n.x += n.vx * 0.5; n.y += n.vy * 0.5;
+      }
+    }
+
+    /* ---------- таймлайн: хранилище прорастает заметка за заметкой ---------- */
+    // Шкала идёт по порядку рождения заметок, а не по календарю: ткань растёт ровно,
+    // без долгих пустых пауз, а дата под шкалой показывает, когда это было.
+    timeline(on) {
+      if (!on) {
+        this.tl = null;
+        for (const n of this.nodes) { n.tv = 1; n.shown = true; }
+        for (const e of this.edges) { e.tv = 1; e.on = true; }
+        return;
+      }
+      this.tl = { p: 0, playing: true, speed: 1, last: -1 };
+      for (const n of this.nodes) { n.tv = 0; n.shown = false; }
+      for (const e of this.edges) { e.tv = 0; e.on = false; }
+      this._tlIndex();
+      this.signals = []; this.rings = [];
+    }
+    _tlIndex() {
+      const tl = this.tl;
+      const B = this.nodes.filter((n) => n.kind !== "branch").map((n) => n.born || 0).sort((a, b) => a - b);
+      tl.B = B;
+      // вся история за 15–60 секунд на скорости ×1
+      tl.dur = Math.max(15, Math.min(60, B.length * 0.05));
+    }
+    // момент времени, до которого клетки уже родились, при положении шкалы p (0…1)
+    tlTime(p) {
+      const B = this.tl ? this.tl.B : null;
+      if (!B || !B.length) return 0;
+      const k = Math.round(p * B.length);
+      return k > 0 ? B[Math.min(B.length, k) - 1] : B[0] - 1;
+    }
+    // положение шкалы для даты (обратное к tlTime): доля клеток, родившихся не позже t
+    tlPos(t) {
+      const B = this.tl ? this.tl.B : null;
+      if (!B || !B.length) return 0;
+      let lo = 0, hi = B.length;
+      while (lo < hi) { const m = (lo + hi) >> 1; if (B[m] <= t) lo = m + 1; else hi = m; }
+      return lo / B.length;
+    }
+    tlSeek(p) { if (this.tl) { this.tl.p = Math.max(0, Math.min(1, p)); this.tl.seeking = true; } }
+    _timeline(dt) {
+      const tl = this.tl;
+      if (!tl) return;
+      if (tl.playing) {
+        tl.p = Math.min(1, tl.p + (dt * tl.speed) / tl.dur);
+        if (tl.p >= 1) tl.playing = false;
+      }
+      const T = this.tlTime(tl.p);
+      tl.t = T;
+      // при перемотке клетки появляются тихо, при проигрывании — вспыхивают
+      let bursts = tl.playing && !tl.seeking ? 4 : 0;
+      tl.seeking = false;
+      for (const n of this.nodes) {
+        const on = n.born <= T;
+        if (on && !n.shown) {
+          n.shown = true;
+          if (bursts > 0 && n.kind !== "branch") { bursts--; n.tv = Math.max(n.tv, 0.05); (tl.newborn = tl.newborn || []).push(n); }
+        } else if (!on && n.shown) n.shown = false;
+        n.tv = on ? Math.min(1, n.tv + dt * 1.7) : Math.max(0, n.tv - dt * 5);
+      }
+      for (const e of this.edges) {
+        e.on = e.a.shown && e.b.shown;
+        // связь растёт от старшей клетки к младшей
+        if (e.on && e.tv === 0) e.fromOld = (e.a.born || 0) <= (e.b.born || 0);
+        e.tv = e.on ? Math.min(1, e.tv + dt * (e.a.tv > 0.6 && e.b.tv > 0.6 ? 1.6 : 0)) : Math.max(0, e.tv - dt * 5);
+      }
+      if (tl.newborn) { for (const n of tl.newborn) this.fire(n, null, true); tl.newborn = null; }
+      if (this.opts.onTimeline) this.opts.onTimeline(tl);
     }
 
     /* ---------- нервная активность ---------- */
@@ -507,7 +789,7 @@ const NG = (function () {
       this.fireLog.push(this.time);
       if (n.r >= 3 && this.rings.length < 60) this.rings.push({ n, t: 0 });
       if (this.signals.length > 420) return;
-      const out = n.adj.filter((e) => e !== from);
+      const out = n.adj.filter((e) => e !== from && e.on);
       if (!out.length) return;
       const want = n.kind === "branch" ? out.length * 0.75 : strong ? Math.min(out.length, 6 + Math.sqrt(out.length) * 1.5) : Math.min(out.length, 1 + Math.sqrt(out.length) * 0.9);
       const p = want / out.length;
@@ -524,7 +806,7 @@ const NG = (function () {
         n.flash *= Math.exp(-dt * 2.6);
         n.v *= Math.exp(-dt * 1.1);
         if (n.refr > 0) n.refr -= dt;
-        if (act > 0 && Math.random() < n.rate * act * dt) this.fire(n, null);
+        if (act > 0 && n.shown && Math.random() < n.rate * act * dt) this.fire(n, null);
       }
       for (let i = this.signals.length - 1; i >= 0; i--) {
         const s = this.signals[i];
@@ -532,6 +814,7 @@ const NG = (function () {
         if (s.t >= 1) {
           this.signals.splice(i, 1);
           const tgt = s.fwd ? s.e.b : s.e.a;
+          if (!s.e.on) continue;
           tgt.v += 0.62 + 0.08 * Math.min(4, s.e.w) + (tgt.deg <= 2 ? 0.4 : 0);
           tgt.flash = Math.max(tgt.flash, 0.35);
           if (tgt.v >= 1) this.fire(tgt, s.e);
@@ -635,7 +918,7 @@ const NG = (function () {
       let best = null, bd = Infinity;
       const minR = 7 / this.cam.z;
       for (const n of this.nodes) {
-        if (n.kind === "branch") continue;
+        if (n.kind === "branch" || n.tv < 0.5) continue;
         const dx = n.x - w.x, dy = n.y - w.y, d = Math.sqrt(dx * dx + dy * dy);
         const lim = Math.max(n.r * 1.4, minR);
         if (d < lim && d - lim < bd) { bd = d - lim; best = n; }
@@ -709,17 +992,24 @@ const NG = (function () {
         this.opts.sync(this);
         if (this._destroyed) return;
       }
+      if (this._warm) { this._warmStep(12); this._last = now; return; }
       const cam = this.cam;
       const moved = cam.x !== this._pcx || cam.y !== this._pcy || cam.z !== this._pcz;
       this._pcx = cam.x; this._pcy = cam.y; this._pcz = cam.z;
-      const busy = moved || !!this.drag || !!this.hover || !!this.camTarget;
+      const busy = moved || !!this.drag || !!this.hover || !!this.camTarget || !!(this.tl && this.tl.playing);
       if (!frameGate(this, now, busy, this.opts.maxFps, this.c.ownerDocument)) return;
       const dt = Math.min(0.05, (now - this._last) / 1000);
       this._last = now;
       this.time += dt;
       const t0 = performance.now();
       const n = this.nodes.length;
-      if (!this.opts.external && (n < 1600 || (this._tick = (this._tick || 0) + 1) % 2 === 0)) this._physics(dt);
+      if (!this.opts.external) {
+        // большой граф: силы считаем через кадр, а движение делим пополам между кадрами
+        if (n < 1600) this._physics();
+        else if ((this._tick = (this._tick || 0) + 1) % 2 === 0) this._physics(true);
+        else this._glide();
+      }
+      this._timeline(dt);
       this._activity(dt);
       if (this.camTarget) {
         const k = 1 - Math.exp(-dt * 6);
@@ -728,7 +1018,7 @@ const NG = (function () {
         this.cam.z += (this.camTarget.z - this.cam.z) * k;
         if (Math.abs(this.camTarget.z - this.cam.z) < 0.001) this.camTarget = null;
       }
-      this.fade = Math.min(1, this.fade + dt * 1.6);
+      if (!this.hold) this.fade = Math.min(1, this.fade + dt * 1.6);
       this.hoverMix += ((this.hover ? 1 : 0) - this.hoverMix) * Math.min(1, dt * 8);
       if (this.scene) this._drawGL(); else this._draw();
       this.frameMs = this.frameMs * 0.95 + (performance.now() - t0) * 0.05;
@@ -753,15 +1043,19 @@ const NG = (function () {
       this._curves();
       const hv = this.hover;
       this._related = hv ? new Set(hv.adj.map((e) => (e.a === hv ? e.b : e.a)).concat([hv])) : null;
-      this.scene.render(this);
-      const ctx = this.ctx;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, this.c.width, this.c.height);
-      ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-      ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 1;
-      if (this.opts.labels) this._labels(ctx, this._related);
-      this._overlay(ctx, true);
+      const allN = this.nodes, allE = this.edges;
+      if (this.tl) { this.nodes = allN.filter((n) => n.tv > 0); this.edges = allE.filter((e) => e.tv > 0); }
+      try {
+        this.scene.render(this);
+        const ctx = this.ctx;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, this.c.width, this.c.height);
+        ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+        ctx.globalCompositeOperation = "source-over";
+        ctx.globalAlpha = 1;
+        if (this.opts.labels) this._labels(ctx, this._related);
+        this._overlay(ctx, true);
+      } finally { this.nodes = allN; this.edges = allE; }
     }
 
     _draw() {
@@ -977,13 +1271,15 @@ const NG = (function () {
         const big = c.n === this.hover;
         ctx.font = (big ? "600 13px " : "500 12px ") + FONT;
         const text = c.n.label;
-        const tw = ctx.measureText(text).width;
+        // ширина подписи не меняется — меряем один раз на клетку
+        let tw = big ? c.n._tw13 : c.n._tw12;
+        if (tw === undefined) { tw = ctx.measureText(text).width; if (big) c.n._tw13 = tw; else c.n._tw12 = tw; }
         const ph = big ? 22 : 19;
         const y = c.sy + c.n.r * z + 6 + ph / 2;
         const r = { x: c.sx - tw / 2 - 8, y: y - ph / 2, w: tw + 16, h: ph };
         if (!big && rects.some((q) => r.x < q.x + q.w && r.x + r.w > q.x && r.y < q.y + q.h && r.y + r.h > q.y)) continue;
         rects.push(r);
-        ctx.globalAlpha = c.a * this.fade;
+        ctx.globalAlpha = c.a * this.fade * c.n.tv;
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(r.x, r.y, r.w, r.h, ph / 2); else ctx.rect(r.x, r.y, r.w, r.h);
         ctx.fillStyle = big ? "rgba(255, 255, 255, 0.92)" : "rgba(18, 18, 22, 0.66)";
@@ -1192,6 +1488,17 @@ const NG = (function () {
     }`,
   };
 
+  // таблицы степеней: те же числа, что Math.pow, только посчитанные один раз
+  const powRow = (M, p) => { const a = new Float64Array(M + 1); for (let i = 0; i <= M; i++) a[i] = Math.pow(1 - i / M, p); return a; };
+  const POW085_10 = powRow(10, 0.85), POW085_5 = powRow(5, 0.85), POW08_5 = powRow(5, 0.8);
+  const POW06 = new Map();
+  function powTable(N, fwd) {
+    const key = fwd ? N : -N;
+    let a = POW06.get(key);
+    if (!a) { a = new Float64Array(N + 1); for (let i = 0; i <= N; i++) { const u = i / N; a[i] = Math.pow(fwd ? u : 1 - u, 0.6); } POW06.set(key, a); }
+    return a;
+  }
+
   class PointBatch {
     constructor(gl, quad) {
       this.gl = gl; this.n = 0; this.data = new Float32Array(8 * 2048);
@@ -1335,21 +1642,15 @@ const NG = (function () {
     dispose() { this._free(); const ext = this.gl.getExtension("WEBGL_lose_context"); ext && ext.loseContext(); }
 
     /* --- построение геометрии --- */
-    _vert(x, y, side, hw, ext, r, g, b, i) {
-      if ((this.lineN + 1) * 9 > this.lineData.length) { const d = new Float32Array(this.lineData.length * 2); d.set(this.lineData); this.lineData = d; }
-      const f = this.lineData, o = this.lineN * 9;
-      f[o] = x; f[o + 1] = y; f[o + 2] = side; f[o + 3] = hw; f[o + 4] = ext; f[o + 5] = r; f[o + 6] = g; f[o + 7] = b; f[o + 8] = i;
-      this.lineN++;
-    }
-    _dupLast() {
-      if (!this.lineN) return;
-      const f = this.lineData, o = (this.lineN - 1) * 9;
-      this._vert(f[o], f[o + 1], f[o + 2], f[o + 3], f[o + 4], f[o + 5], f[o + 6], f[o + 7], f[o + 8]);
-    }
     // полоса по точкам SX/SY с полутолщиной SW (мир), цветом и яркостью
     _strip(n, z) {
       if (n < 2) return;
       const SX = this.SX, SY = this.SY, SW = this.SW, SR = this.SR, SG = this.SG, SB = this.SB, SI = this.SI;
+      // место под всю полосу сразу (плюс две склейки), дальше пишем без проверок
+      const need = (this.lineN + n * 2 + 2) * 9;
+      if (need > this.lineData.length) { let L = this.lineData.length * 2; while (L < need) L *= 2; const d = new Float32Array(L); d.set(this.lineData); this.lineData = d; }
+      const F = this.lineData;
+      let o = this.lineN * 9;
       for (let i = 0; i < n; i++) {
         const i0 = i > 0 ? i - 1 : i, i1 = i < n - 1 ? i + 1 : i;
         let tx = SX[i1] - SX[i0], ty = SY[i1] - SY[i0];
@@ -1359,10 +1660,33 @@ const NG = (function () {
         if (hw < 0.55) { it *= Math.max(0.18, hw / 0.55); hw = 0.55; }
         const ext = hw + 1.8 + hw * 1.4;
         const ew = ext / z, nx = -ty * ew, ny = tx * ew;
-        if (i === 0 && this.lineN) { this._dupLast(); this._vert(SX[0] + nx, SY[0] + ny, 1, hw, ext, SR[0], SG[0], SB[0], it); }
-        this._vert(SX[i] + nx, SY[i] + ny, 1, hw, ext, SR[i], SG[i], SB[i], it);
-        this._vert(SX[i] - nx, SY[i] - ny, -1, hw, ext, SR[i], SG[i], SB[i], it);
+        const r = SR[i], g = SG[i], b = SB[i];
+        if (i === 0 && o) { // вырожденные треугольники между полосами
+          for (let k = 0; k < 9; k++) F[o + k] = F[o - 9 + k];
+          o += 9;
+          F[o] = SX[0] + nx; F[o + 1] = SY[0] + ny; F[o + 2] = 1; F[o + 3] = hw; F[o + 4] = ext; F[o + 5] = r; F[o + 6] = g; F[o + 7] = b; F[o + 8] = it;
+          o += 9;
+        }
+        F[o] = SX[i] + nx; F[o + 1] = SY[i] + ny; F[o + 2] = 1; F[o + 3] = hw; F[o + 4] = ext; F[o + 5] = r; F[o + 6] = g; F[o + 7] = b; F[o + 8] = it;
+        o += 9;
+        F[o] = SX[i] - nx; F[o + 1] = SY[i] - ny; F[o + 2] = -1; F[o + 3] = hw; F[o + 4] = ext; F[o + 5] = r; F[o + 6] = g; F[o + 7] = b; F[o + 8] = it;
+        o += 9;
       }
+      this.lineN = o / 9;
+    }
+    // боковая веточка дендрита
+    _fork(d, f, bx, by, bth, bw, ks, c, it, t, z) {
+      const SX = this.SX, SY = this.SY, SW = this.SW, SR = this.SR, SG = this.SG, SB = this.SB, SI = this.SI;
+      const K = 5;
+      for (let i = 0; i <= K; i++) {
+        const s = i / K;
+        const th = bth + f.da + d.curl * 0.4 * s + 0.12 * Math.sin(t * 0.9 + d.ph + 1 + s * 2);
+        SX[i] = bx + Math.cos(th) * f.len * ks * s; SY[i] = by + Math.sin(th) * f.len * ks * s;
+        SW[i] = bw * 0.75 * POW08_5[i] + 0.08;
+        SR[i] = c[0]; SG[i] = c[1]; SB[i] = c[2];
+        SI[i] = it * 0.85 * (1 - 0.4 * s);
+      }
+      this._strip(K + 1, z);
     }
     _soma(x, y, r, q, c, inten, fl, ph, dim) {
       if ((this.somaN + 1) * 10 > this.somaData.length) { const d = new Float32Array(this.somaData.length * 2); d.set(this.somaData); this.somaData = d; }
@@ -1407,7 +1731,7 @@ const NG = (function () {
       this.lineN = 0; this.somaN = 0; this.back.n = 0; this.front.n = 0;
       const cam = Rn.cam, z = cam.z, t = Rn.time, fade = Rn.fade;
       const hv = Rn.hover, hm = Rn.hoverMix, related = Rn._related;
-      const dimOf = (nd) => (related && !related.has(nd) ? 1 - 0.78 * hm : 1);
+      const dimOf = (nd) => (related && !related.has(nd) ? 1 - 0.78 * hm : 1) * nd.tv;
       const vw = Rn.w / z / 2 + 40, vh = Rn.h / z / 2 + 40;
       const vis = (x, y, m) => Math.abs(x - cam.x) < vw + m && Math.abs(y - cam.y) < vh + m;
       const px = 1 / z;
@@ -1432,17 +1756,22 @@ const NG = (function () {
         const A = e.a, B = e.b;
         if (!vis((A.x + B.x) / 2, (A.y + B.y) / 2, e.len / 2 + 10)) continue;
         const hot = hv && (A === hv || B === hv);
-        const dimE = hot ? 1 : related ? 1 - 0.82 * hm : 1;
+        const dimE = (hot ? 1 : related ? 1 - 0.82 * hm : 1) * Math.min(1, e.tv * 3);
         const base = (e.taper ? 0.22 : 0.28) * fade * dimE * (hot ? 1 + 2.2 * hm : 1);
         const W = WCL[e.w <= 1 ? 0 : e.w <= 4 ? 1 : e.w <= 12 ? 2 : 3] * 0.5;
         const N = Math.max(4, Math.min(30, Math.round((e.len * z) / 9)));
         const kE = e.big && e.big.r0 ? Math.min(3, e.big.r / e.big.r0) : 1;
         const ca = A.lin, cb = B.lin;
+        // в таймлайне связь прорастает от старшей клетки: рисуем только готовую часть
+        const g = e.tv < 1 ? e.tv * e.tv * (3 - 2 * e.tv) : 1;
+        const u0 = g < 1 && !e.fromOld ? 1 - g : 0, du = g;
+        const TP = e.taper && g === 1 ? powTable(N, e.fromA) : null;
         for (let i = 0; i <= N; i++) {
-          const u = i / N;
+          const u = u0 + (du * i) / N;
           GLScene.edgePoint(e, u, t, P);
           SX[i] = P[0]; SY[i] = P[1];
-          if (e.taper) { const uu = e.fromA ? u : 1 - u; SW[i] = (e.w0 + (e.w1 - e.w0) * Math.pow(uu, 0.6)) * 0.5 * kE; }
+          if (TP) SW[i] = (e.w0 + (e.w1 - e.w0) * TP[i]) * 0.5 * kE;
+          else if (e.taper) SW[i] = (e.w0 + (e.w1 - e.w0) * Math.pow(e.fromA ? u : 1 - u, 0.6)) * 0.5 * kE;
           else SW[i] = W;
           let r = ca[0] + (cb[0] - ca[0]) * u, g = ca[1] + (cb[1] - ca[1]) * u, b = ca[2] + (cb[2] - ca[2]) * u;
           if (hot) { r += (WHITE[0] - r) * 0.3 * hm; g += (WHITE[1] - g) * 0.3 * hm; b += (WHITE[2] - b) * 0.3 * hm; }
@@ -1451,7 +1780,7 @@ const NG = (function () {
         }
         this._strip(N + 1, z);
         // синаптическая бляшка у цели
-        if (B.kind !== "branch" && e.len * z > 30 && Rn.lod > 0) {
+        if (B.kind !== "branch" && e.len * z > 30 && Rn.lod > 0 && g === 1) {
           GLScene.edgePoint(e, 1 - Math.min(0.25, (B.r + 2) / e.len), t, P);
           this.front.add(P[0], P[1], Math.max(1.2, 1.6 * px), cb, 0.35 * fade * dimE, 0);
         }
@@ -1463,7 +1792,8 @@ const NG = (function () {
           if (!n.dend.length || n.r * z < 0.9) continue;
           if (!vis(n.x, n.y, n.r * 8)) continue;
           const dim = dimOf(n) * fade;
-          const ks = n.r0 ? n.r / n.r0 : 1;
+          const grow = n.tv < 1 ? 1 - Math.pow(1 - n.tv, 3) : 1; // дендриты вырастают из новой клетки
+          const ks = (n.r0 ? n.r / n.r0 : 1) * grow;
           const it = (0.3 + 1.2 * n.flash) * dim;
           const c = n.lin;
           for (const d of n.dend) {
@@ -1471,12 +1801,13 @@ const NG = (function () {
             const L = d.len * ks * (1 + 0.05 * Math.sin(t * 0.9 + d.ph));
             const w0 = Math.max(0.35, n.r * 0.17);
             let fx = 0, fy = 0, fth = 0, fw = 0, fx2 = 0, fy2 = 0, fth2 = 0, fw2 = 0;
+            const PW = M === 10 ? POW085_10 : POW085_5;
             for (let i = 0; i <= M; i++) {
               const s = i / M;
               const th = d.ang + d.curl * s * s * 0.9 + 0.1 * Math.sin(t * 0.7 + d.ph + s * 2.6);
               const rho = n.r * 0.82 + L * s;
               SX[i] = n.x + Math.cos(th) * rho; SY[i] = n.y + Math.sin(th) * rho;
-              SW[i] = w0 * Math.pow(1 - s, 0.85) + 0.1;
+              SW[i] = w0 * PW[i] + 0.1;
               SR[i] = c[0]; SG[i] = c[1]; SB[i] = c[2];
               SI[i] = it * (1 - 0.4 * s);
               if (d.fork && Math.abs(s - d.fork.at) < 0.5 / M) { fx = SX[i]; fy = SY[i]; fth = th; fw = SW[i]; }
@@ -1484,20 +1815,8 @@ const NG = (function () {
             }
             const tipX = SX[M], tipY = SY[M];
             this._strip(M + 1, z);
-            const forks = [[d.fork, fx, fy, fth, fw], [d.fork2, fx2, fy2, fth2, fw2]];
-            for (const [f, bx, by, bth, bw] of forks) {
-              if (!f || (!bx && !by)) continue;
-              const K = 5;
-              for (let i = 0; i <= K; i++) {
-                const s = i / K;
-                const th = bth + f.da + d.curl * 0.4 * s + 0.12 * Math.sin(t * 0.9 + d.ph + 1 + s * 2);
-                SX[i] = bx + Math.cos(th) * f.len * ks * s; SY[i] = by + Math.sin(th) * f.len * ks * s;
-                SW[i] = bw * 0.75 * Math.pow(1 - s, 0.8) + 0.08;
-                SR[i] = c[0]; SG[i] = c[1]; SB[i] = c[2];
-                SI[i] = it * 0.85 * (1 - 0.4 * s);
-              }
-              this._strip(K + 1, z);
-            }
+            if (d.fork && (fx || fy)) this._fork(d, d.fork, fx, fy, fth, fw, ks, c, it, t, z);
+            if (d.fork2 && (fx2 || fy2)) this._fork(d, d.fork2, fx2, fy2, fth2, fw2, ks, c, it, t, z);
             if (n.r * z > 3) this.front.add(tipX, tipY, Math.max(0.9, 1.4 * px), c, 0.28 * it, 0);
           }
         }
@@ -1547,7 +1866,7 @@ const NG = (function () {
           this.front.add(n.x, n.y, Math.max(1.6, 2.2 * px), n.lin, (0.45 + 1.8 * n.flash) * dim, 0);
           continue;
         }
-        const r = Math.max(n.r, 0.85 * px);
+        const r = Math.max(n.r, 0.85 * px) * (n.tv < 1 ? 0.35 + 0.65 * (1 - Math.pow(1 - n.tv, 3)) : 1);
         const inten = n.kind === "unresolved" ? 0.35 : n.kind === "note" || n.kind === "canvas" ? 0.62 : 0.5;
         const hl = n === hv ? 1 + 0.6 * hm : 1;
         const fall = r * 0.55 + 2.5 * px;                 // длина затухания ореола (как в шейдере)

@@ -2,6 +2,23 @@
 
 All notable changes to Flora are listed here. Versions follow [semantic versioning](https://semver.org).
 
+## 5.4.0
+
+### Added
+- **Timeline** in the Neurograph. Select **Timeline** and watch your vault grow note by note in the order you created it: new cells bloom in place and fire, and a link grows from the older note to the newer one once both exist. Play or pause, change the speed, or drag along the scale to any moment. The date and the number of neurons at that moment are shown under the scale.
+- A Flora loading screen. While the Neurograph gathers your notes and lays them out, a glass Flora flower unfolds with a progress bar, and the tissue fades in when it is ready.
+
+### Fixed
+- Neurons no longer shake. Repulsion between cells used to cut off sharply at 900 px, so a cell got a small kick every time a distant cluster crossed that line. It now fades out smoothly.
+- The Neurograph no longer twitches after you edit a note. A refresh that changes nothing keeps the layout and the signals in flight as they are.
+- Large vaults (1,600+ cells) move smoothly instead of in half-steps.
+
+### Changed
+- Much faster Neurograph, with the same look: the physics is about 2.6× faster, building a frame for the GPU about 1.5× faster, rebuilding the graph after a change about 1.5× faster.
+- Opening the Neurograph no longer freezes Obsidian. The first layout used to run in one block (2 s for 1,000 notes, 12 s for 4,000); it now runs between frames behind the loading screen.
+- Styles no longer use `:has()`, `!important` or prefixed masks.
+- Releases are built from source by GitHub Actions and come with build provenance attestations. The repository now has a `package-lock.json`.
+
 ## 5.3.2
 
 ### Changed

@@ -384,6 +384,7 @@ class CaseView extends obsidian.ItemView {
     if (!this.linkList) return;
     const d = this.data;
     this.linkList.textContent = "";
+    this.linkList.classList.toggle("is-empty", !d.links.length);
     if (!d.links.length) this.mk("div", "ng-case-none", this.linkList, L("Связей пока нет", "No links yet"));
     for (const l of d.links) {
       const row = this.mk("div", "ng-case-link", this.linkList);
