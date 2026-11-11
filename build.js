@@ -8,8 +8,8 @@ const root = __dirname;
 const out = path.resolve(process.argv[2] || root);
 const src = (f) => fs.readFileSync(path.join(root, "src", f), "utf8");
 
-const JS = ["core.js", "daily.js", "lab.js", "case.js", "plugin.js"];
-const CSS = ["plugin.css", "skin.css", "case.css", "lab.css"];
+const JS = ["core.js", "flora3d.js", "daily.js", "lab.js", "case.js", "plugin.js"];
+const CSS = ["plugin.css", "flora3d.css", "skin.css", "case.css", "lab.css"];
 
 const main =
   '"use strict";\n' +

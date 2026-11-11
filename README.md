@@ -53,6 +53,8 @@ A view of your whole vault as living tissue. Big notes grow crowns of dendrites,
 
 **Timeline** replays how the vault grew: notes bloom in the order you created them and links grow between them. Play it, change the speed or drag to any date.
 
+**Flora 3D** shows the same vault in depth: every note is a neuron with a bright core and its own dendrites, links are fine threads, and tens of thousands of particles gather around them into one glowing organism. Rotate it, fly into a group, pick a note to send light along its links, search by name, `#tag` or folder. Neurons fire in fans of light, pulses run along the links, and waves of activity drift through the whole shape. Group by folders, tags or links, choose one of five shapes (organism, brain, nerves, spheres, galaxy) and one of seven palettes.
+
 </td>
 </tr>
 <tr>
@@ -245,12 +247,13 @@ node build.js "/path/to/vault/.obsidian/plugins/flora"
 | Command | What it does |
 | --- | --- |
 | **Flora: Open Neurograph** | Opens your vault as living tissue in a new tab |
+| **Flora: Open Flora 3D** | Opens your vault as a 3D organism of particles in a new tab |
 | **Flora: Open today's journal** | Opens or creates today's daily note with the journal header |
 | **Flora: Open the investigation board** | Opens the case board with your cases |
 | **Flora: New case** | Creates a new case note and opens it on the board |
 | **Flora: Toggle the neural look of the graph view** | Switches the built-in graph between neurons and the original style |
 
-The Neurograph and the investigation board also have their own icons in the left ribbon.
+The Neurograph, Flora 3D and the investigation board also have their own icons in the left ribbon.
 
 <br />
 

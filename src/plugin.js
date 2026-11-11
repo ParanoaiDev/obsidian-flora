@@ -380,6 +380,10 @@ class NeuralGraphPlugin extends obsidian.Plugin {
       id: "toggle-core-skin", name: L("Вкл/выкл нейронный вид обычного графа", "Toggle the neural look of the graph view"),
       callback: async () => { this.settings.skinGraph = !this.settings.skinGraph; await this.saveSettings(); this.syncSkins(true); },
     });
+    // Flora 3D: объёмный организм хранилища
+    this.registerView(FLORA3D_VIEW, (leaf) => new Flora3DView(leaf, this));
+    this.addRibbonIcon("atom", "Flora 3D", () => this.openFlora3D());
+    this.addCommand({ id: "open-3d", name: L("Открыть Flora 3D", "Open Flora 3D"), callback: () => this.openFlora3D() });
     this.addSettingTab(new NeuralGraphSettingTab(this.app, this));
     // полный дизайн интерфейса
     this.applySkin();
@@ -532,6 +536,15 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     if (!sk) return;
     this.skins.delete(leaf);
     try { sk.destroy(); } catch (e) { console.error(e); }
+  }
+
+  async openFlora3D() {
+    let leaf = this.app.workspace.getLeavesOfType(FLORA3D_VIEW)[0];
+    if (!leaf) {
+      leaf = this.app.workspace.getLeaf("tab");
+      await leaf.setViewState({ type: FLORA3D_VIEW, active: true });
+    }
+    this.app.workspace.revealLeaf(leaf);
   }
 
   async saveSettings() { await this.saveData(this.settings); }

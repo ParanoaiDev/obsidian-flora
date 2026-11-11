@@ -2573,5 +2573,5 @@ const NG = (function () {
     }
   }
 
-  return { buildGraph, fromCore, NeuralRenderer, GLScene, CoreSkin, CanvasSkin, PALETTE, ROOT_COLOR };
+  return { buildGraph, fromCore, NeuralRenderer, GLScene, CoreSkin, CanvasSkin, PALETTE, ROOT_COLOR, SHADERS, rand, hexRgb, toLin };
 })();

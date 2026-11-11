@@ -25,12 +25,13 @@ Reload the plugin in Obsidian (turn it off and on, or use a hot-reload plugin) t
 | File | What it does |
 | --- | --- |
 | `src/core.js` | Language helpers, graph building, physics, the WebGL2 renderer, graph and canvas skins |
+| `src/flora3d.js` | Flora 3D: the 3D layout, particle renderer, camera, search and its view |
 | `src/daily.js` | Today's journal and auto-tasks |
 | `src/lab.js` | The start screen in empty tabs |
 | `src/case.js` | The investigation board |
 | `src/plugin.js` | Views, commands and settings |
 | `src/skin.css` | The Flora design for Obsidian's interface |
-| `src/plugin.css`, `src/case.css`, `src/lab.css` | Styles for Flora's own views |
+| `src/plugin.css`, `src/flora3d.css`, `src/case.css`, `src/lab.css` | Styles for Flora's own views |
 
 ## Guidelines
 

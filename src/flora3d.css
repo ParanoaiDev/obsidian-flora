@@ -1,0 +1,177 @@
+/* =========================================================
+   Flora 3D — объёмный организм хранилища
+   Точки, нити и свечение рисует видеокарта; здесь — стекло вокруг сцены.
+   ========================================================= */
+.workspace-leaf-content[data-type="flora-3d"] .view-content.f3d-view {
+  padding: 0; overflow: hidden; position: relative; background: #000;
+}
+.f3d-stage { position: absolute; inset: 0; opacity: 0; transition: opacity 0.9s ease; }
+.f3d-stage.is-ready { opacity: 1; }
+.f3d {
+  position: absolute; inset: 0; overflow: hidden; outline: none;
+  background: #000; color: #fff;
+  font-family: var(--ng-font, "Segoe UI", system-ui, sans-serif); font-size: 13px;
+  -webkit-user-select: none; user-select: none;
+}
+.f3d [hidden] { display: none; }
+.f3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+.f3d-canvas:active { cursor: grabbing; }
+.f3d-canvas.is-hot { cursor: pointer; }
+
+/* ---------- подписи в пространстве ---------- */
+.f3d-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.f3d-label {
+  position: absolute; left: 0; top: 0; max-width: 190px; height: 22px; padding: 0 9px;
+  transform: translate(var(--x), var(--y)) translate(-50%, -50%);
+  opacity: var(--o, 1); pointer-events: auto; cursor: pointer;
+  border: none; border-radius: 999px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background: rgba(8, 10, 16, 0.84); color: rgba(235, 238, 245, 0.9);
+  font-family: inherit; font-size: 11.5px; font-weight: 500; line-height: 22px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: opacity 0.2s ease, background-color 0.15s ease;
+}
+.f3d-label:hover { background: rgba(30, 34, 46, 0.9); color: #fff; }
+.f3d-label.is-group {
+  color: var(--f3d-c, #fff); font-weight: 600; letter-spacing: 0.01em;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--f3d-c, #fff) 38%, transparent);
+}
+.f3d-label.is-strong { background: rgba(255, 255, 255, 0.94); color: #0b0d12; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5); }
+
+/* ---------- подсказка под курсором ---------- */
+.f3d-tip {
+  position: absolute; left: 0; top: 0; z-index: 4; max-width: 240px; padding: 7px 10px;
+  transform: translate(var(--x, 0), var(--y, 0));
+  border-radius: 10px; pointer-events: none; opacity: 0; transition: opacity 0.12s ease;
+  background: rgba(14, 16, 22, 0.92); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.f3d-tip.is-on { opacity: 1; }
+.f3d-tip-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.f3d-tip-meta { margin-top: 1px; font-size: 11.5px; color: rgba(235, 235, 245, 0.6); }
+
+/* ---------- поиск и карточка заметки ---------- */
+.f3d-left { position: absolute; left: 12px; top: 12px; z-index: 3; width: min(300px, calc(100% - 24px)); display: flex; flex-direction: column; gap: 8px; }
+.f3d-search { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border-radius: 999px; }
+.f3d-search-ico { display: inline-flex; color: rgba(235, 235, 245, 0.6); }
+.f3d-search-ico svg { width: 15px; height: 15px; }
+.f3d .f3d-search-input {
+  flex: 1; min-width: 0; height: 100%; padding: 0; border: none; box-shadow: none; outline: none;
+  background: transparent; color: #fff; font-family: inherit; font-size: 13px;
+  -webkit-user-select: text; user-select: text;
+}
+.f3d .f3d-search-input::placeholder { color: rgba(235, 235, 245, 0.45); }
+.f3d-search:focus-within { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 0 2px rgba(var(--ng-accent-rgb, 10, 132, 255), 0.8), 0 10px 30px rgba(0, 0, 0, 0.4); }
+.f3d-search-count { font-size: 12px; color: rgba(235, 235, 245, 0.6); font-variant-numeric: tabular-nums; }
+
+.f3d-card { padding: 14px; border-radius: 18px; animation: f3d-rise 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.f3d-card-head { display: flex; align-items: flex-start; gap: 8px; }
+.f3d-card-head .f3d-legend-dot { margin-top: 6px; }
+.f3d-card-title { flex: 1; min-width: 0; font-family: var(--ng-display, inherit); font-size: 16px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.f3d .f3d-card-x {
+  flex: none; width: 24px; height: 24px; padding: 0; border: none; border-radius: 50%; box-shadow: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.1); color: rgba(235, 235, 245, 0.7); cursor: pointer;
+}
+.f3d .f3d-card-x:hover { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.f3d-card-x svg { width: 14px; height: 14px; }
+.f3d-card-meta { margin-top: 4px; font-size: 12px; color: rgba(235, 235, 245, 0.6); overflow-wrap: anywhere; }
+.f3d-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 9px; }
+.f3d .f3d-chip {
+  height: 22px; padding: 0 8px; border: none; border-radius: 999px; box-shadow: none; cursor: pointer;
+  background: rgba(255, 255, 255, 0.1); color: rgba(235, 235, 245, 0.85); font-family: inherit; font-size: 11.5px;
+}
+.f3d .f3d-chip:hover { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.f3d .f3d-open {
+  width: 100%; height: 32px; margin-top: 12px; border: none; border-radius: 10px; box-shadow: none; cursor: pointer;
+  background: rgb(var(--ng-accent-rgb, 10, 132, 255)); color: #fff; font-family: inherit; font-size: 13px; font-weight: 600;
+}
+.f3d .f3d-open:hover { filter: brightness(1.12); }
+.f3d-card-sub { margin: 12px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(235, 235, 245, 0.5); }
+.f3d-card-list { display: flex; flex-direction: column; max-height: 190px; overflow-y: auto; }
+.f3d .f3d-card-link {
+  display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 6px; border: none; border-radius: 7px; box-shadow: none;
+  background: transparent; color: rgba(235, 235, 245, 0.85); font-family: inherit; font-size: 12.5px; text-align: left; cursor: pointer;
+}
+.f3d .f3d-card-link span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.f3d .f3d-card-link:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+
+/* ---------- панель «Вид» ---------- */
+.f3d-panel {
+  position: absolute; right: 12px; top: 58px; bottom: 12px; z-index: 3; width: 264px; max-height: 560px;
+  padding: 6px 14px 14px; border-radius: 20px; overflow-y: auto;
+  animation: f3d-rise 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.f3d-h { margin: 12px 0 7px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(235, 235, 245, 0.5); }
+.f3d-pal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.f3d .f3d-pal-btn {
+  height: 26px; padding: 0; border: none; border-radius: 8px; cursor: pointer;
+  background: var(--f3d-sw); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  transition: transform 0.15s ease;
+}
+.f3d .f3d-pal-btn:hover { transform: scale(1.08); }
+.f3d .f3d-pal-btn.is-on { box-shadow: 0 0 0 2px #000, 0 0 0 4px #fff; }
+.f3d-seg { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(0, 0, 0, 0.3); }
+.f3d .f3d-seg-btn {
+  flex: 1; height: 26px; padding: 0 6px; border: none; border-radius: 8px; box-shadow: none; cursor: pointer;
+  background: transparent; color: rgba(235, 235, 245, 0.7); font-family: inherit; font-size: 12.5px; font-weight: 500;
+}
+.f3d .f3d-seg-btn:hover { color: #fff; }
+.f3d .f3d-seg-btn.is-on { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.f3d-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 8px; margin-bottom: 9px; color: rgba(235, 235, 245, 0.85); }
+.f3d-row-val { font-size: 12px; color: rgba(235, 235, 245, 0.55); font-variant-numeric: tabular-nums; }
+.f3d-row-toggle { margin-bottom: 7px; cursor: pointer; }
+.f3d .f3d-range {
+  grid-column: 1 / -1; width: 100%; height: 16px; margin: 0; padding: 0; border: none; box-shadow: none;
+  -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer;
+}
+.f3d .f3d-range::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); }
+.f3d .f3d-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 14px; height: 14px; margin-top: -5px; border: none; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+.f3d .f3d-toggle {
+  -webkit-appearance: none; appearance: none; position: relative; width: 34px; height: 20px; margin: 0; border: none; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2); cursor: pointer; transition: background-color 0.15s ease;
+}
+.f3d .f3d-toggle::after {
+  content: ""; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); transition: transform 0.15s ease;
+}
+.f3d .f3d-toggle:checked { background: rgb(var(--ng-accent-rgb, 10, 132, 255)); }
+.f3d .f3d-toggle:checked::after { transform: translateX(14px); }
+.f3d .f3d-range:focus-visible, .f3d .f3d-toggle:focus-visible, .f3d button:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.8); outline-offset: 2px; }
+
+/* ---------- легенда групп ---------- */
+.f3d-legend { position: absolute; left: 12px; bottom: 12px; z-index: 2; width: 230px; max-width: calc(100% - 24px); padding: 10px 6px 6px; border-radius: 16px; }
+.f3d-legend-head { padding: 0 8px 6px; font-size: 12px; color: rgba(235, 235, 245, 0.6); font-variant-numeric: tabular-nums; }
+.f3d-legend-list { display: flex; flex-direction: column; max-height: 176px; overflow-y: auto; }
+.f3d .f3d-legend-row {
+  flex: none; display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 8px; border: none; border-radius: 8px; box-shadow: none;
+  background: transparent; color: rgba(235, 235, 245, 0.85); font-family: inherit; font-size: 12.5px; text-align: left; cursor: pointer;
+}
+.f3d .f3d-legend-row:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.f3d .f3d-legend-row.is-on { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.f3d-legend-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--f3d-c, #fff); box-shadow: 0 0 8px var(--f3d-c, #fff); }
+.f3d-legend-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.f3d-legend-count { color: rgba(235, 235, 245, 0.5); font-variant-numeric: tabular-nums; }
+.f3d-legend-more { padding: 4px 8px; font-size: 12px; color: rgba(235, 235, 245, 0.5); }
+
+@keyframes f3d-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ---------- пустое хранилище, ошибка ---------- */
+.f3d-note {
+  position: absolute; left: 50%; top: 50%; z-index: 2; width: min(360px, calc(100% - 48px)); transform: translate(-50%, -50%);
+  text-align: center; font-size: 14px; line-height: 1.5; color: rgba(235, 235, 245, 0.7);
+}
+
+.f3d-panel, .f3d-legend-list, .f3d-card-list { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; }
+@media (max-width: 620px) {
+  .f3d-legend { display: none; }
+  .f3d-left { top: 56px; }
+  .f3d-panel { left: 12px; width: auto; top: 104px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .f3d-card, .f3d-panel { animation: none; }
+  .f3d-stage { transition: none; }
+}
+.f3d-seg { flex-wrap: wrap; }
+.f3d .f3d-seg-btn { flex: 1 0 30%; }

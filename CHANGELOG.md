@@ -2,6 +2,18 @@
 
 All notable changes to Flora are listed here. Versions follow [semantic versioning](https://semver.org).
 
+## 5.5.0
+
+### Added
+- **Flora 3D**, a new view with its own ribbon icon and the **Open Flora 3D** command. Your vault becomes a 3D organism: every note is a neuron with a bright core and its own dendrites, every link a fine thread, and tens of thousands of particles gather along the links and around the notes. The particles are decoration and never stand in for a note.
+- Rotate by dragging, pan with the right button or Shift, zoom with the wheel or a pinch. Double-click the background to fit everything.
+- Hover a note to see its name, click to select it: light flows from it along its links, and a card shows its folder, tags and linked notes. Double-click opens the note; one-click opening is an option.
+- Search by name, `#tag` or folder. Click a group in the legend to show only that group.
+- Group notes by folders, tags or links. Five shapes with a smooth flight between them: **Organism**, **Brain**, **Nerves** (a brain on a spine with ribs and nerves made of particles), **Spheres** (every group is a ball with its most linked note in the centre) and **Galaxy** (groups laid along spiral arms). Seven palettes, and sliders for particles, point size, links, glow and speed.
+- Neurons fire: a fan of light grows from a note towards a linked one and sometimes carries on down the chain, pulses run along the links, and slow waves of activity brighten and dim whole regions. Both have their own sliders.
+- The layout is stable: the same vault always grows into the same shape.
+- Pause stops all motion; the scene is also still when the system asks for reduced motion.
+
 ## 5.4.1
 
 ### Changed
