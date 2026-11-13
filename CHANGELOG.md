@@ -2,6 +2,12 @@
 
 All notable changes to Flora are listed here. Versions follow [semantic versioning](https://semver.org).
 
+## 6.0.1
+
+### Fixed
+- Live wallpapers now show under the text of a note, in reading and editing mode. Obsidian paints the note area and its header with a solid colour of its own, so the wallpaper was only visible under the sidebars.
+- The vault switcher at the bottom of the left sidebar is translucent over a wallpaper, like the rest of the sidebar.
+
 ## 6.0.0
 
 ### Added

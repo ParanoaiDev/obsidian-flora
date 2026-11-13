@@ -17,6 +17,13 @@ body.ng-skin.ng-wall .workspace-split.mod-root .workspace-leaf {
   -webkit-backdrop-filter: blur(var(--fl-wall-blur)) saturate(140%); backdrop-filter: blur(var(--fl-wall-blur)) saturate(140%);
 }
 body.ng-skin.ng-wall .workspace-split.mod-root .workspace-leaf-content { background: transparent; }
+/* Obsidian сам закрашивает содержимое и шапку заметки сплошным фоном: без этого обои под текстом не видны */
+body.ng-skin.ng-wall .workspace-split.mod-root .workspace-leaf-content[data-type="markdown"] > .view-content,
+body.ng-skin.ng-wall .workspace-split.mod-root .workspace-leaf-content[data-type="markdown"] > .view-header { background: transparent; }
+body.ng-skin.ng-wall .workspace-split.mod-left-split.mod-sidedock .workspace-sidedock-vault-profile {
+  background: color-mix(in srgb, var(--fl-surface) var(--fl-wall-side), transparent);
+  -webkit-backdrop-filter: blur(var(--fl-wall-blur)) saturate(150%); backdrop-filter: blur(var(--fl-wall-blur)) saturate(150%);
+}
 body.ng-skin.ng-wall .workspace-split.mod-sidedock > .workspace-tabs,
 body.ng-skin.ng-wall .workspace-ribbon.mod-left .side-dock-actions,
 body.ng-skin.ng-wall .workspace-ribbon.mod-left .side-dock-settings {
