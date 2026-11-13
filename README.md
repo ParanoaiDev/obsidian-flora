@@ -36,6 +36,16 @@ and signals run along them while you think.
 
 <br />
 
+## 🆕 New in 6.0
+
+- **Shape catalog.** In Flora 3D your notes can now build a human, a heart, an eye, DNA, a butterfly, a jellyfish and more: 17 shapes in one catalog. Or type a word, or pick a picture, and the neurons build that.
+- **The Spider.** A spider made of neurons walks your graph and finds the links you forgot to make. It runs on your computer and never changes a note.
+- **Live wallpapers.** Eight gently moving scenes under your notes and under every Flora view.
+
+The full list is in the [changelog](CHANGELOG.md).
+
+<br />
+
 ## ✨ What's inside
 
 <table>
@@ -53,7 +63,9 @@ A view of your whole vault as living tissue. Big notes grow crowns of dendrites,
 
 **Timeline** replays how the vault grew: notes bloom in the order you created them and links grow between them. Play it, change the speed or drag to any date.
 
-**Flora 3D** shows the same vault in depth: every note is a neuron with a bright core and its own dendrites, links are fine threads, and tens of thousands of particles gather around them into one glowing organism. Rotate it, fly into a group, pick a note to send light along its links, search by name, `#tag` or folder. Neurons fire in fans of light, pulses run along the links, and waves of activity drift through the whole shape. Group by folders, tags or links, choose one of five shapes (organism, brain, nerves, spheres, galaxy) and one of seven palettes.
+**Flora 3D** shows the same vault in depth: every note is a neuron with a bright core and its own dendrites, links are fine threads, and tens of thousands of particles gather around them into one glowing organism. Rotate it, fly into a group, pick a note to send light along its links, search by name, `#tag` or folder. Neurons fire in fans of light, pulses run along the links, and waves of activity drift through the whole shape. Group by folders, tags or links and choose one of seven palettes.
+
+The **shape catalog** has 17 shapes. Five follow your links (organism, brain, nerves, spheres, galaxy); twelve are figures the neurons build step by step: a human, a heart, an eye, a neuron, DNA, a flower, a tree, a butterfly, a jellyfish, a spider, a knot and a ringed planet. Some are alive: the heart beats, the butterfly moves its wings, the jellyfish sways. You can also type a word or pick a picture and watch the neurons build it. Changing the shape is one smooth flight, with every particle keeping its colour on the way.
 
 </td>
 </tr>
@@ -82,6 +94,20 @@ A header for daily notes: the date, day-to-day navigation, dots for the month, a
 
 ### 🔎 Investigation board
 A case board for OSINT and research: entities (people, organizations, accounts, emails, phones, domains, IPs, places, vehicles, documents), links, a timeline and sources graded on the A–F / 1–6 scale, plus a live link map. Each case is a plain note.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🕷️ The Spider
+Press the spider button in the Neurograph or the graph view. A spider made of neurons walks the graph, reads your notes and looks for links that are missing: a note mentioned by name without a link, notes that share rare tags, notes with similar titles. It weaves a thread between the two notes and lists every finding; click one to open the note and add the link yourself. Nothing leaves your computer, and the spider never edits a note.
+
+</td>
+<td valign="top">
+
+### 🖼️ Live wallpapers
+Eight backgrounds painted in small cells that are always gently moving: Bloom, Neurons, Clouds, Pond, Jellyfish, Fireflies, Moonlit and Aurora, each in a dark and a light version. The wallpaper lives under the glass of your notes and under the Neurograph, Flora 3D, canvases and the graph view. Choose how solid the glass is: solid, balanced or wallpaper first.
 
 </td>
 </tr>
@@ -248,12 +274,13 @@ node build.js "/path/to/vault/.obsidian/plugins/flora"
 | --- | --- |
 | **Flora: Open Neurograph** | Opens your vault as living tissue in a new tab |
 | **Flora: Open Flora 3D** | Opens your vault as a 3D organism of particles in a new tab |
+| **Flora: Choose wallpaper** | Opens the live wallpaper picker |
 | **Flora: Open today's journal** | Opens or creates today's daily note with the journal header |
 | **Flora: Open the investigation board** | Opens the case board with your cases |
 | **Flora: New case** | Creates a new case note and opens it on the board |
 | **Flora: Toggle the neural look of the graph view** | Switches the built-in graph between neurons and the original style |
 
-The Neurograph, Flora 3D and the investigation board also have their own icons in the left ribbon.
+The Neurograph, Flora 3D, live wallpapers and the investigation board also have their own icons in the left ribbon. The spider starts from its button in the Neurograph and in the graph view.
 
 <br />
 
@@ -272,6 +299,7 @@ The Neurograph, Flora 3D and the investigation board also have their own icons i
 | Today's journal | On | The header for daily notes |
 | Auto tasks | On | New lines under **Tasks** become checkboxes |
 | Neuron activity | ×1 | How often cells fire on their own, from off to ×4 |
+| Live wallpaper | None | One of eight moving backgrounds, and how solid the glass over it is |
 
 <br />
 

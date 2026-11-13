@@ -28,6 +28,7 @@ const F3D = (function () {
   const MAX_LINES = 16000;    // одновременно видимых связей
   const GOLD = 2.399963229728653;
   const FORMS = ["organism", "brain", "anatomy", "spheres", "galaxy"];
+  const fitOf = (f) => { const sh = F3S.get(f); return sh ? sh.fit || 1 : ({ brain: 1.04, anatomy: 1.1, galaxy: 1.0, spheres: 0.9 }[f] || 0.86); };
   const FAN_B = 16, FAN_L = 44, FS = 12;   // вспышки: сколько одновременно, лучей в каждой, чисел на вершину
   const FAN_DUR = 1.7;
 
@@ -335,7 +336,7 @@ const F3D = (function () {
       const k = r > lim && !whole ? ((lim + WORLD * 0.2 * (1 - Math.exp(-(r - lim) / (WORLD * 0.2)))) / r) * unit : unit;
       P[i * 3] = (P[i * 3] - mx) * k; P[i * 3 + 1] = (P[i * 3 + 1] - my) * k; P[i * 3 + 2] = (P[i * 3 + 2] - mz) * k;
     }
-    const fitR = WORLD * ({ brain: 1.04, anatomy: 1.1, galaxy: 1.0, spheres: 0.9 }[s.form] || 0.86);
+    const fitR = WORLD * fitOf(s.form);
 
     if (s.form === "brain" || s.form === "anatomy") {
       // те же группы, вписанные в объём мозга: два полушария, плоское основание
@@ -364,6 +365,26 @@ const F3D = (function () {
         }
       }
     }
+    // фигура из каталога: заметки садятся на точки формы, группы идут по ней полосами
+    const shape = F3S.get(s.form);
+    let bands = null;
+    if (shape && N) {
+      const rf = rand("fig:" + shape.id), S = shape.scale || 94, o = [0, 0, 0, 0];
+      const Q = new Float32Array(N * 3), K = new Float32Array(N);
+      for (let i = 0; i < N; i++) {
+        for (let tr = 0; tr < 6; tr++) { o[3] = 0; if (shape.sample(rf, o) !== 1) break; }     // заметки — на детали, а не на бледный контур
+        Q[i * 3] = o[0] * S; Q[i * 3 + 1] = o[1] * S; Q[i * 3 + 2] = o[2] * S; K[i] = F3S.keyOf(shape, o);
+      }
+      const pts = [...Array(N).keys()].sort((a, b) => K[a] - K[b] || a - b);
+      const ord = [...Array(N).keys()].sort((a, b) => cof[a] - cof[b] || P[a * 3] - P[b * 3] || a - b);
+      const NP = new Float32Array(N * 3), keys = new Float32Array(N), kc = new Int32Array(N);
+      for (let k = 0; k < N; k++) {
+        const i = ord[k], j = pts[k];
+        NP[i * 3] = Q[j * 3]; NP[i * 3 + 1] = Q[j * 3 + 1]; NP[i * 3 + 2] = Q[j * 3 + 2]; keys[k] = K[j]; kc[k] = cof[i];
+      }
+      P.set(NP);
+      bands = { keys, kc };
+    }
     for (const c of clusters) {
       let x = 0, y = 0, z = 0;
       for (const i of c.nodes) { x += P[i * 3]; y += P[i * 3 + 1]; z += P[i * 3 + 2]; }
@@ -372,7 +393,7 @@ const F3D = (function () {
       for (const i of c.nodes) { const dx = P[i * 3] - x, dy = P[i * 3 + 1] - y, dz = P[i * 3 + 2] - z; r2 += dx * dx + dy * dy + dz * dz; }
       c.x = x; c.y = y; c.z = z; c.r = Math.max(unit * 0.8, Math.sqrt(r2 / n) * 1.5);
     }
-    return { nodes, N, adj, deg, edges, clusters, cof, P, unit, idx, h1, h2, fitR };
+    return { nodes, N, adj, deg, edges, clusters, cof, P, unit, idx, h1, h2, fitR, shape, bands };
   }
 
   // точка мозга (единичные координаты): кора с извилинами, височные доли, мозжечок, ствол
@@ -388,6 +409,8 @@ const F3D = (function () {
         const f1 = Math.sin(dx * 10 + Math.sin(dz * 7 + dy * 4) * 1.9 + dy * 6), f2 = Math.cos(dz * 9 + Math.sin(dx * 7 - dy * 3) * 1.6);
         const fold = Math.abs(f1 * f2);
         if (rnd() > 0.08 + 0.92 * Math.pow(fold, 0.8)) continue;
+        if (Math.abs(dx) > 0.42 && dz > -0.5 && dz < 0.5 && Math.abs(dy - (-0.02 - 0.3 * dz)) < 0.03) continue;      // боковая борозда
+        if (dy > 0.15 && Math.abs(dz - (-0.02 - 0.32 * (1 - dy))) < 0.022) continue;                                 // центральная борозда
         let r = 1 + 0.04 * fold;
         r *= 1 - 0.24 * Math.exp(-(dx * dx) / 0.01) * clamp((dy + 0.15) / 0.5, 0, 1);    // щель между полушариями
         r *= 1 + 0.07 * clamp(dz, 0, 1) * clamp(dy + 0.2, 0, 1);                          // лоб чуть выше
@@ -429,21 +452,45 @@ const F3D = (function () {
   /* ------------------------------------------------------------------ */
   const SH = {
     pointV: `#version 300 es
-    layout(location=0) in vec3 a_from; layout(location=1) in vec3 a_to; layout(location=2) in vec4 a_col; layout(location=3) in vec4 a_misc; layout(location=4) in float a_hl;
+    layout(location=0) in vec3 a_from; layout(location=1) in vec3 a_to; layout(location=2) in vec4 a_col; layout(location=3) in vec4 a_misc; layout(location=4) in float a_hl; layout(location=5) in vec3 a_colFrom;
     uniform mat4 u_vp; uniform float u_mix, u_time, u_px, u_size, u_motion, u_focusC, u_dim, u_dustDim, u_fog0, u_fog1, u_dpr, u_maxPt, u_stream, u_fade, u_wave, u_focus, u_minNode;
+    uniform float u_flap, u_sway, u_beat;
+    // живые формы: взмах крыльев, колыхание щупалец, биение сердца
+    vec3 alive(vec3 p, float t) {
+      if (u_flap > 0.0) { float a = u_flap * sin(t * 3.4); p.z += abs(p.x) * sin(a); p.x *= cos(a); }
+      if (u_sway > 0.0) {
+        float d = max(0.0, 50.0 - p.y) / 100.0;
+        p.x += u_sway * 14.0 * d * d * sin(t * 1.2 + p.y * 0.07); p.z += u_sway * 14.0 * d * d * cos(t * 0.9 + p.y * 0.05);
+        if (p.y > 50.0) p.xz *= 1.0 + u_sway * 0.05 * sin(t * 1.9);
+      }
+      if (u_beat > 0.0) { float f = fract(t * 1.05) * 6.0; p *= 1.0 + u_beat * (exp(-(f - 0.6) * (f - 0.6) * 8.0) + 0.55 * exp(-(f - 1.9) * (f - 1.9) * 8.0)); }
+      return p;
+    }
+    uniform float u_build;
+    // сборка по порядку: снизу вверх, из центра или слева направо; у каждой частицы своя небольшая задержка
+    float build(vec3 to, float ph) {
+      float ord = u_build < 0.5 ? ph : u_build < 1.5 ? clamp(to.y / 200.0 + 0.5, 0.0, 1.0) : u_build < 2.5 ? clamp(length(to) / 120.0, 0.0, 1.0) : clamp(to.x / 200.0 + 0.5, 0.0, 1.0);
+      ord = mix(ord, ph, 0.16);
+      float m = clamp(u_mix * 2.1 - ord * 1.1, 0.0, 1.0);
+      return m * m * (3.0 - 2.0 * m);
+    }
     out vec4 v_col; out float v_kind; out float v_px; out float v_ph;
     void main(){
-      float ph = a_misc.y, kind = a_misc.w, inten = a_col.a;
+      float ph = a_misc.y, kind = a_misc.w, inten = a_col.a, cm = 1.0;
       vec3 p;
       if (u_stream > 0.5) {
         float t = fract(ph * 7.0 + u_time * 0.11);      // частица течёт от выбранной заметки к соседу
         p = mix(a_from, a_to, t);
         inten *= sin(t * 3.14159);
       } else {
-        p = mix(a_from, a_to, u_mix);
-        p += sin(u_mix * 3.14159) * 7.0 * vec3(sin(ph * 40.0), cos(ph * 27.0), sin(ph * 61.0));   // вихрь при перестройке
+        float m = build(a_to, ph);
+        cm = m;
+        p = mix(a_from, a_to, m);
+        p += sin(m * 3.14159) * (4.0 + 9.0 * ph) * vec3(sin(ph * 40.0), cos(ph * 27.0), sin(ph * 61.0));   // вихрь при перестройке
         if (kind < 0.5) p += 0.55 * u_motion * vec3(sin(u_time * 0.31 + ph * 6.283), sin(u_time * 0.23 + ph * 12.7), sin(u_time * 0.27 + ph * 19.1));
       }
+      inten *= 1.0 - 0.45 * sin(cm * 3.14159);       // в полёте частица тусклее: посреди перестройки нет белого кома
+      if (u_stream < 0.5) p = alive(p, u_time);
       p *= 1.0 + 0.011 * u_motion * sin(u_time * 0.42 - length(p) * 0.035);                       // дыхание
       vec4 clip = u_vp * vec4(p, 1.0);
       gl_Position = clip;
@@ -469,7 +516,7 @@ const F3D = (function () {
       gl_PointSize = size;
       v_px = size / u_dpr; v_ph = ph;
       inten *= u_fade;
-      v_col = vec4(a_col.rgb, inten); v_kind = kind;
+      v_col = vec4(mix(a_colFrom, a_col.rgb, smoothstep(0.3, 0.7, cm)), inten); v_kind = kind;
     }`,
     pointF: `#version 300 es
     precision highp float;
@@ -515,16 +562,37 @@ const F3D = (function () {
     lineV: `#version 300 es
     layout(location=0) in vec3 a_from; layout(location=1) in vec3 a_to; layout(location=2) in vec4 a_col; layout(location=3) in vec2 a_misc;
     uniform mat4 u_vp; uniform float u_mix, u_time, u_motion, u_focusC, u_dim, u_fog0, u_fog1, u_k;
+    uniform float u_flap, u_sway, u_beat;
+    // живые формы: взмах крыльев, колыхание щупалец, биение сердца
+    vec3 alive(vec3 p, float t) {
+      if (u_flap > 0.0) { float a = u_flap * sin(t * 3.4); p.z += abs(p.x) * sin(a); p.x *= cos(a); }
+      if (u_sway > 0.0) {
+        float d = max(0.0, 50.0 - p.y) / 100.0;
+        p.x += u_sway * 14.0 * d * d * sin(t * 1.2 + p.y * 0.07); p.z += u_sway * 14.0 * d * d * cos(t * 0.9 + p.y * 0.05);
+        if (p.y > 50.0) p.xz *= 1.0 + u_sway * 0.05 * sin(t * 1.9);
+      }
+      if (u_beat > 0.0) { float f = fract(t * 1.05) * 6.0; p *= 1.0 + u_beat * (exp(-(f - 0.6) * (f - 0.6) * 8.0) + 0.55 * exp(-(f - 1.9) * (f - 1.9) * 8.0)); }
+      return p;
+    }
+    uniform float u_build;
+    // сборка по порядку: снизу вверх, из центра или слева направо; у каждой частицы своя небольшая задержка
+    float build(vec3 to, float ph) {
+      float ord = u_build < 0.5 ? ph : u_build < 1.5 ? clamp(to.y / 200.0 + 0.5, 0.0, 1.0) : u_build < 2.5 ? clamp(length(to) / 120.0, 0.0, 1.0) : clamp(to.x / 200.0 + 0.5, 0.0, 1.0);
+      ord = mix(ord, ph, 0.16);
+      float m = clamp(u_mix * 2.1 - ord * 1.1, 0.0, 1.0);
+      return m * m * (3.0 - 2.0 * m);
+    }
     out vec4 v_col; out float v_t; out float v_ph;
     void main(){
-      vec3 p = mix(a_from, a_to, u_mix);
+      float m = build(a_to, 0.5);
+      vec3 p = alive(mix(a_from, a_to, m), u_time);
       p *= 1.0 + 0.011 * u_motion * sin(u_time * 0.42 - length(p) * 0.035);
       vec4 clip = u_vp * vec4(p, 1.0);
       gl_Position = clip;
       float fog = clamp((u_fog1 - clip.w) / (u_fog1 - u_fog0), 0.0, 1.0);
       float focus = (u_focusC < 0.0 || abs(a_misc.y - u_focusC) < 0.5) ? 1.0 : u_dim;
       float sw = sin(u_mix * 3.14159);
-      v_col = vec4(a_col.rgb, a_col.a * u_k * mix(0.06, 1.0, fog * fog) * focus * (1.0 - sw) * (u_mix < 1.0 ? u_mix * u_mix : 1.0));
+      v_col = vec4(a_col.rgb, a_col.a * u_k * mix(0.06, 1.0, fog * fog) * focus * m * m);
       v_t = mod(a_misc.x, 2.0); v_ph = floor(a_misc.x * 0.5) * 0.61;
     }`,
     lineF: `#version 300 es
@@ -539,11 +607,23 @@ const F3D = (function () {
     fanV: `#version 300 es
     layout(location=0) in vec3 a_o; layout(location=1) in vec3 a_d; layout(location=2) in vec4 a_col; layout(location=3) in vec2 a_misc;
     uniform mat4 u_vp; uniform float u_time, u_motion, u_fog0, u_fog1, u_dpr, u_dur, u_pt;
+    uniform float u_flap, u_sway, u_beat;
+    // живые формы: взмах крыльев, колыхание щупалец, биение сердца
+    vec3 alive(vec3 p, float t) {
+      if (u_flap > 0.0) { float a = u_flap * sin(t * 3.4); p.z += abs(p.x) * sin(a); p.x *= cos(a); }
+      if (u_sway > 0.0) {
+        float d = max(0.0, 50.0 - p.y) / 100.0;
+        p.x += u_sway * 14.0 * d * d * sin(t * 1.2 + p.y * 0.07); p.z += u_sway * 14.0 * d * d * cos(t * 0.9 + p.y * 0.05);
+        if (p.y > 50.0) p.xz *= 1.0 + u_sway * 0.05 * sin(t * 1.9);
+      }
+      if (u_beat > 0.0) { float f = fract(t * 1.05) * 6.0; p *= 1.0 + u_beat * (exp(-(f - 0.6) * (f - 0.6) * 8.0) + 0.55 * exp(-(f - 1.9) * (f - 1.9) * 8.0)); }
+      return p;
+    }
     out vec4 v_col;
     void main(){
       float age = (u_time - a_col.a) / u_dur, v = a_misc.x;
       float grow = 1.0 - pow(1.0 - clamp(age * 1.9, 0.0, 1.0), 3.0);
-      vec3 p = a_o + a_d * grow * v;
+      vec3 p = alive(a_o, u_time) + a_d * grow * v;
       p *= 1.0 + 0.011 * u_motion * sin(u_time * 0.42 - length(p) * 0.035);
       vec4 clip = u_vp * vec4(p, 1.0);
       gl_Position = clip;
@@ -579,7 +659,7 @@ const F3D = (function () {
       o = vec4(col, 1.0);
     }`,
   };
-  const PS = 14, LS = 12;   // чисел на точку и на вершину линии
+  const PS = 17, LS = 12;   // чисел на точку и на вершину линии
 
   /* ------------------------------------------------------------------ */
   /* Сцена                                                               */
@@ -605,7 +685,8 @@ const F3D = (function () {
       this.sel = -1; this.hover = -1; this.isolate = -1; this.hoverC = -1; this.found = null;
       this.model = null; this.nodeN = 0; this.dustN = 0; this.lineN = 0; this.streamN = 0; this.hiN = 0;
       this.quality = 1; this.slow = 0; this.dustCut = 1;
-      if (FORMS.indexOf(this.s.form) < 0) this.s.form = DEFAULTS.form;
+      if (!F3S.known(this.s.form)) this.s.form = DEFAULTS.form;
+      this._custom();
       this.fanData = new Float32Array(FAN_B * FAN_L * 2 * FS);
       this.fanNext = 0; this.fanClock = 0.6; this.fanQueue = [];
       this.pointers = new Map();
@@ -663,8 +744,11 @@ const F3D = (function () {
       const g1 = this._el("div", "ng-ctl-group", bar);
       this.bPlay = this._btn(g1, "pause", "", L("Пауза анимации (пробел)", "Pause animation (Space)"));
       this.bPlay.onclick = () => this.setMotion(!this.motionOn, true);
+      this.bCat = this._btn(g1, "shapes", L("Формы", "Shapes"), L("Каталог форм: во что собрать нейроны", "Shape catalog: what the neurons build"));
+      this.bCat.onclick = () => this._toggleCat();
       const fit = this._btn(g1, "scan", "", L("Показать всё (F или двойной клик по фону)", "Fit all (F or double-click the background)"));
       fit.onclick = () => this.fit();
+      if (this.opts.onWall) this._btn(g1, "image", "", L("Живые обои", "Live wallpaper")).onclick = () => this.opts.onWall();
       this.bPanel = this._btn(g1, "sliders-horizontal", L("Вид", "Look"), L("Палитра, форма, частицы и свечение", "Palette, shape, particles and glow"));
       this.bPanel.onclick = () => this._togglePanel();
 
@@ -672,6 +756,8 @@ const F3D = (function () {
       this.panel.hidden = true;
       this._buildPanel();
 
+      this.cat = this._el("div", "f3d-cat ng-glass-dark", host);
+      this.cat.hidden = true;
       this.legend = this._el("div", "f3d-legend ng-glass-dark", host);
       this.note = this._el("div", "f3d-note", host);
       this.note.hidden = true;
@@ -725,7 +811,7 @@ const F3D = (function () {
       syncPal();
 
       sec = section(L("Форма", "Shape"));
-      seg(sec, "form", [["organism", L("Организм", "Organism")], ["brain", L("Мозг", "Brain")], ["anatomy", L("Нервы", "Nerves")], ["spheres", L("Сферы", "Spheres")], ["galaxy", L("Галактика", "Galaxy")]], () => { this._pose(); this._rebuild(true); });
+      { const b = this._el("button", "f3d-open f3d-open-cat", sec, L("Каталог форм", "Shape catalog")); b.type = "button"; b.onclick = () => this._toggleCat(true); }
       sec = section(L("Группы", "Groups"));
       seg(sec, "groupBy", [["folder", L("Папки", "Folders")], ["tag", L("Теги", "Tags")], ["links", L("Связи", "Links")]], () => { this.isolate = -1; this._rebuild(true); });
       sec = section(L("Подписи", "Labels"));
@@ -745,12 +831,97 @@ const F3D = (function () {
       toggle(sec, L("Открывать заметку одним кликом", "Open a note with one click"), "clickOpens");
     }
 
+    // свои формы: слово собирается сразу, картинка — когда загрузится сохранённая маска
+    _custom() {
+      const s = this.s;
+      F3S.custom.word = s.customText ? F3S.textShape(this.doc, s.customText) : null;
+      if (s.customMask && !this._maskAt) {
+        this._maskAt = s.customMask;
+        F3S.loadImage(this.doc, s.customMask).then((im) => {
+          const cv = this.doc.createElement("canvas"); cv.width = im.width; cv.height = im.height;
+          cv.getContext("2d").drawImage(im, 0, 0);
+          F3S.custom.image = F3S.fromMask("image", cv, false);
+          if (this.s.form === "image" && !this.destroyed && this.graph) this._rebuild(true);
+        }).catch(() => {});
+      }
+    }
+    setForm(id) {
+      this.s.form = id; this._save();
+      this._pose(); this._rebuild(true); this._syncCat();
+    }
+    // разобрать сцену и собрать заново из разлетевшихся нейронов
+    replay() { this._scatter = true; this._rebuild(true); this._scatter = false; }
+    _toggleCat(force) {
+      const open = force == null ? this.cat.hidden : force;
+      if (open && !this.cat.firstChild) this._buildCat();
+      this.cat.hidden = !open;
+      this.bCat.classList.toggle("is-on", open);
+      if (open) this._togglePanel(false);
+    }
+    _syncCat() { for (const [id, b] of this.catBtns || []) b.classList.toggle("is-on", this.s.form === id); }
+    _buildCat() {
+      const c = this.cat, s = this.s;
+      c.textContent = "";
+      this.catBtns = [];
+      const card = (parent, sh, name) => {
+        const b = this._el("button", "f3d-shape", parent);
+        b.type = "button"; b.title = name;
+        const cv = this._el("canvas", "f3d-shape-cv", b); cv.width = 132; cv.height = 132;
+        F3S.preview(cv, sh);
+        this._el("span", "f3d-shape-name", b, name);
+        this.catBtns.push([sh.id, b]);
+        return b;
+      };
+      // свои формы: слово и картинка
+      const row = this._el("div", "f3d-cat-row", c);
+      this._el("div", "f3d-cat-name", row, L("Из вашего", "From yours"));
+      const own = this._el("div", "f3d-cat-own", row);
+      const inp = this._el("input", "f3d-cat-input", own);
+      inp.type = "text"; inp.maxLength = 60; inp.value = s.customText || this.opts.vaultName || "";
+      inp.placeholder = L("Слово или название — соберётся из нейронов", "A word or a title — built from neurons");
+      const go = this._el("button", "f3d-cat-btn is-main", own, L("Собрать слово", "Build the word"));
+      go.type = "button";
+      const build = () => {
+        const sh = F3S.textShape(this.doc, inp.value);
+        if (!sh) return;
+        s.customText = inp.value.trim(); F3S.custom.word = sh; this.setForm("word");
+      };
+      go.onclick = build;
+      inp.onkeydown = (ev) => { if (ev.key === "Enter") build(); ev.stopPropagation(); };
+      const file = this._el("input", "", own); file.type = "file"; file.accept = "image/*"; file.hidden = true;
+      const pic = this._el("button", "f3d-cat-btn", own, L("Картинка…", "Picture…"));
+      pic.type = "button"; pic.title = L("Нейроны повторят силуэт картинки. Лучше всего — рисунок на прозрачном или ровном фоне", "The neurons repeat the picture's outline. Works best with a drawing on a transparent or plain background");
+      pic.onclick = () => file.click();
+      file.onchange = () => {
+        const f = file.files && file.files[0];
+        if (!f) return;
+        const rd = new FileReader();
+        rd.onload = () => F3S.loadImage(this.doc, rd.result).then((im) => {
+          const cv = F3S.maskFromImage(this.doc, im), sh = F3S.fromMask("image", cv, false);
+          if (!sh) return;
+          s.customMask = cv.toDataURL("image/png"); this._maskAt = s.customMask; F3S.custom.image = sh; this.setForm("image");
+        }).catch(() => {});
+        rd.readAsDataURL(f); file.value = "";
+      };
+      const again = this._el("button", "f3d-cat-btn", own, L("Собрать заново", "Build again"));
+      again.type = "button"; again.title = L("Разобрать сцену и посмотреть, как нейроны собирают форму", "Take the scene apart and watch the neurons build the shape");
+      again.onclick = () => this.replay();
+      for (const [cid, cname] of F3S.CATS) {
+        const row = this._el("div", "f3d-cat-row", c);
+        this._el("div", "f3d-cat-name", row, cname());
+        const grid = this._el("div", "f3d-cat-grid", row);
+        for (const sh of F3S.SHAPES) if (sh.cat === cid) card(grid, sh, sh.name()).onclick = () => this.setForm(sh.id);
+      }
+      this._syncCat();
+    }
+
     // у каждой формы свой выгодный ракурс
     _pose() {
       const f = this.s.form;
-      this.camTo.pitch = f === "galaxy" ? 0.62 : f === "spheres" ? 0.85 : f === "anatomy" ? 0.04 : f === "brain" ? 0.14 : 0.2;
-      if (f === "anatomy" || f === "brain") this.camTo.yaw = Math.round(this.camTo.yaw / 6.2832) * 6.2832 + (f === "brain" ? 1.2 : 0.3);
-      if (this.model) { this.model.fitR = WORLD * ({ brain: 1.04, anatomy: 1.1, galaxy: 1.0, spheres: 0.9 }[f] || 0.86); }
+      const sh = F3S.get(f), turn = Math.round(this.camTo.yaw / 6.2832) * 6.2832;
+      this.camTo.pitch = sh ? sh.pose.pitch : f === "galaxy" ? 0.62 : f === "spheres" ? 0.85 : f === "anatomy" ? 0.04 : f === "brain" ? 0.14 : 0.2;
+      if (sh) this.camTo.yaw = turn + sh.pose.yaw; else if (f === "anatomy" || f === "brain") this.camTo.yaw = turn + (f === "brain" ? 1.2 : 0.3);
+      if (this.model) this.model.fitR = WORLD * fitOf(f);
       this.isolate = -1; this.select(-1);
       const aspect = this.w / Math.max(1, this.h), half = aspect >= 1 ? FOV / 2 : Math.atan(Math.tan(FOV / 2) * aspect);
       Object.assign(this.camTo, { x: 0, y: 0, z: 0, dist: (this.model ? this.model.fitR : WORLD) * 1.08 / Math.sin(half) });
@@ -760,6 +931,7 @@ const F3D = (function () {
       const open = force == null ? this.panel.hidden : force;
       this.panel.hidden = !open;
       this.bPanel.classList.toggle("is-on", open);
+      if (open && this.cat) { this.cat.hidden = true; this.bCat.classList.remove("is-on"); }
     }
     _syncPlay() {
       this._ico(this.bPlay.querySelector(".ng-ctl-ico"), this.motionOn ? "pause" : "play");
@@ -820,6 +992,7 @@ const F3D = (function () {
         gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, S, 12);
         gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 4, gl.FLOAT, false, S, 24);
         gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3, 4, gl.FLOAT, false, S, 40);
+        gl.enableVertexAttribArray(5); gl.vertexAttribPointer(5, 3, gl.FLOAT, false, S, 56);
         let hl = null;
         if (withHl) { hl = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, hl); gl.enableVertexAttribArray(4); gl.vertexAttribPointer(4, 1, gl.FLOAT, false, 4, 0); }
         return { vao, buf, hl };
@@ -957,11 +1130,17 @@ const F3D = (function () {
       for (let i = 0; i < N; i++) {
         const o = i * PS, c = model.clusters[model.cof[i]], d = model.deg[i];
         let fx = P[i * 3] * 0.04, fy = P[i * 3 + 1] * 0.04, fz = P[i * 3 + 2] * 0.04;   // первый показ: всё раскрывается из центра
-        if (prev && morph) {
+        let pc = -1;                                                                    // откуда взять прежний цвет точки
+        if (this._scatter) {
+          // сборка заново: нейроны слетаются издалека
+          const a = model.h1[i] * 6.2832, yy = model.h2[i] * 2 - 1, q = Math.sqrt(1 - yy * yy), d = 170 + 130 * model.h1[i];
+          fx = Math.cos(a) * q * d; fy = yy * d; fz = Math.sin(a) * q * d;
+        } else if (prev && morph) {
           const j = prev.idx.get(model.nodes[i].id);
           if (j != null) {
             const a = this.nodeData, q = j * PS;
             fx = a[q] + (a[q + 3] - a[q]) * e; fy = a[q + 1] + (a[q + 4] - a[q + 1]) * e; fz = a[q + 2] + (a[q + 5] - a[q + 2]) * e;
+            pc = q;
           }
         } else if (prev) { fx = P[i * 3]; fy = P[i * 3 + 1]; fz = P[i * 3 + 2]; }
         nd[o] = fx; nd[o + 1] = fy; nd[o + 2] = fz;
@@ -969,21 +1148,24 @@ const F3D = (function () {
         const wk = Math.min(0.5, 0.1 + 0.07 * Math.log2(1 + d));          // связанные заметки светлее
         nd[o + 6] = c.lin[0] + (1 - c.lin[0]) * wk; nd[o + 7] = c.lin[1] + (1 - c.lin[1]) * wk; nd[o + 8] = c.lin[2] + (1 - c.lin[2]) * wk;
         nd[o + 9] = 0.55 + 0.2 * Math.min(4, Math.log2(1 + d));
-        const sz = nb * (2.0 + 0.9 * Math.log2(1 + d)) * sk * (s.form === "anatomy" ? 0.6 : 1);       // вместе с отростками
+        const sz = nb * (2.0 + 0.9 * Math.log2(1 + d)) * sk * (s.form === "anatomy" ? 0.6 : model.shape ? 0.72 : 1);       // вместе с отростками
         model.size[i] = sz;
-        if (s.form === "anatomy") nd[o + 9] *= 0.6;       // in the small crown the notes sit close together
+        if (s.form === "anatomy" || model.shape) nd[o + 9] *= 0.6;       // in the small crown the notes sit close together
         nd[o + 10] = sz; nd[o + 11] = model.h1[i]; nd[o + 12] = model.cof[i]; nd[o + 13] = 1;
+        // цвет при смене формы не перескакивает: точка несёт прежний и плавно приходит к новому
+        for (let k = 0; k < 3; k++) nd[o + 14 + k] = pc < 0 ? nd[o + 6 + k] : this.nodeData[pc + 14 + k] + (this.nodeData[pc + 6 + k] - this.nodeData[pc + 14 + k]) * e;
       }
 
       /* декоративная пыль */
       let Dn = Math.round(clamp(s.density, 2000, 200000));
+      if (model.shape && model.shape.dust) Dn = Math.min(160000, Math.round(Dn * model.shape.dust));
       if (s.form === "spheres") Dn = Math.min(Dn, 6000 + 2500 * model.clusters.length + 250 * N + model.edges.length * 70);
       const dd = new Float32Array(Dn * PS);
       const rnd = rand("dust:" + s.form + ":" + s.groupBy);
       const gauss = () => (rnd() + rnd() + rnd() + rnd() - 2) * 0.87;
       const E = model.edges.length;
-      const F = s.form;
-      let [shEdge, shHalo, shShell] = { brain: [0.24, 0.2, 0.5], anatomy: [0.08, 0.1, 0.78], spheres: [0.2, 0.12, 0.62], galaxy: [0.1, 0.76, 0.08] }[F] || [0.48, 0.45, 0];
+      const SHP = model.shape, F = SHP || FORMS.indexOf(s.form) >= 0 ? s.form : "organism";
+      let [shEdge, shHalo, shShell] = SHP ? [0.04, 0.06, 0.86] : { brain: [0.24, 0.2, 0.5], anatomy: [0.08, 0.1, 0.78], spheres: [0.2, 0.12, 0.62], galaxy: [0.1, 0.76, 0.08] }[F] || [0.48, 0.45, 0];
       // выбор группы с весом по размеру: для разноцветной оболочки и сфер
       const CW = model.clusters.map((c) => Math.pow(c.nodes.length, F === "spheres" ? 0.667 : 1));
       let cwSum = 0;
@@ -1022,7 +1204,9 @@ const F3D = (function () {
         while (lo < hi) { const m = (lo + hi) >> 1; if (cum[m] < t) lo = m + 1; else hi = m; }
         return lo;
       };
-      const bp = [0, 0, 0];
+      const bp = [0, 0, 0], bp4 = [0, 0, 0, 0];
+      // к какой группе относится место на фигуре: группы лежат на ней полосами
+      const bandCl = (key) => { const ks = model.bands.keys; let lo = 0, hi = ks.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (ks[m] < key) lo = m + 1; else hi = m; } return model.bands.kc[lo]; };
       const neutral = toLin([150, 165, 190]);
       for (let k = 0; k < Dn; k++) {
         const o = k * PS;
@@ -1049,7 +1233,15 @@ const F3D = (function () {
           let c = neutral, tint = 0;
           inten = 0.2 + 0.24 * rnd(); size = 0.75 + 0.75 * rnd();
           const NC = model.clusters.length;
-          if (F === "spheres" && NC) {
+          if (SHP) {
+            bp4[3] = 0;
+            const part = SHP.sample(rnd, bp4), S = SHP.scale || 94;
+            x = bp4[0] * S; y = bp4[1] * S; z = bp4[2] * S;
+            if (model.bands) { cl = bandCl(F3S.keyOf(SHP, bp4)); c = model.clusters[cl].lin; }
+            tint = part === 1 ? 0.3 : 0.8;
+            inten = part === 1 ? 0.1 + 0.12 * rnd() : part === 2 ? 0.46 + 0.4 * rnd() : 0.22 + 0.26 * rnd();
+            size = 0.55 + 0.6 * rnd();
+          } else if (F === "spheres" && NC) {
             // оболочка шара группы
             const ci = pickCluster(), cc = model.clusters[ci], R = cc.rs * unit * (0.96 + 0.08 * rnd());
             const yy = rnd() * 2 - 1, a = rnd() * 6.2832, q = Math.sqrt(1 - yy * yy);
@@ -1126,14 +1318,17 @@ const F3D = (function () {
           inten = 0.06 + 0.12 * rnd(); size = 0.7 + 0.8 * rnd();
         }
         if (rnd() < 0.018) { inten *= 3.2; size *= 1.6; }       // редкие яркие «синапсы»
-        let fx = x * 0.04, fy = y * 0.04, fz = z * 0.04;
-        if (prev && morph && this.dustData && k * PS < this.dustData.length) {
+        let fx = x * 0.04, fy = y * 0.04, fz = z * 0.04, pr = r, pg = g, pb = b;
+        if (this._scatter) { const d = 2.0 + 1.8 * rnd(); fx = x * d + gauss() * 45; fy = y * d + gauss() * 45; fz = z * d + gauss() * 45; }
+        else if (prev && morph && this.dustData && k * PS < this.dustData.length) {
           const a = this.dustData;
           fx = a[o] + (a[o + 3] - a[o]) * e; fy = a[o + 1] + (a[o + 4] - a[o + 1]) * e; fz = a[o + 2] + (a[o + 5] - a[o + 2]) * e;
+          pr = a[o + 14] + (a[o + 6] - a[o + 14]) * e; pg = a[o + 15] + (a[o + 7] - a[o + 15]) * e; pb = a[o + 16] + (a[o + 8] - a[o + 16]) * e;
         } else if (prev) { fx = x; fy = y; fz = z; }
         dd[o] = fx; dd[o + 1] = fy; dd[o + 2] = fz; dd[o + 3] = x; dd[o + 4] = y; dd[o + 5] = z;
         dd[o + 6] = r; dd[o + 7] = g; dd[o + 8] = b; dd[o + 9] = inten;
         dd[o + 10] = size; dd[o + 11] = rnd(); dd[o + 12] = cl; dd[o + 13] = 0;
+        dd[o + 14] = pr; dd[o + 15] = pg; dd[o + 16] = pb;
       }
       // перемешиваем, чтобы любая первая часть была равномерной выборкой (для снижения качества на слабом железе)
       const sh = rand("shuffle"), tmp = new Float32Array(PS);
@@ -1159,30 +1354,60 @@ const F3D = (function () {
           nervePt(vi, side, k / 16, a); nervePt(vi, side, (k + 1) / 16, b); seg((vi + 0.5) / NV, 0.42 * (1 - (k / 16) * 0.7));
         }
       }
-      const DL = deco.length / 10;
-      const ld = new Float32Array((edges.length + DL) * 2 * LS);
-      const thin = clamp(Math.sqrt(1400 / Math.max(1, edges.length)), 0.22, 1);
+      if (SHP && SHP.lines) {
+        const S = SHP.scale || 94, kk = [0, 0, 0, 0];
+        SHP.lines((ax, ay, az, bx, by, bz, al) => {
+          let c = neutral;
+          if (model.bands) { kk[0] = (ax + bx) / 2; kk[1] = (ay + by) / 2; kk[2] = (az + bz) / 2; c = model.clusters[SHP.key === "custom" ? 0 : bandCl(F3S.keyOf(SHP, kk))].lin; }
+          deco.push(ax * S, ay * S, az * S, bx * S, by * S, bz * S, neutral[0] + (c[0] - neutral[0]) * 0.55, neutral[1] + (c[1] - neutral[1]) * 0.55, neutral[2] + (c[2] - neutral[2]) * 0.55, al * 0.5);
+        });
+      }
+      const DL = deco.length / 10, E2 = edges.length;
+      // связь — не прямая, а плавная дуга; у нейрона — свои изогнутые отростки
+      const SEG = E2 > 9000 ? 2 : E2 > 4000 ? 3 : 5;
+      const FB = N > 5000 ? 0 : N > 2500 ? 2 : N > 900 ? 3 : 4, FSG = 4, fibN = N * FB * FSG;
+      const ld = new Float32Array((E2 * SEG + DL + fibN) * 2 * LS);
+      const thin = clamp(Math.sqrt(1400 / Math.max(1, E2)), 0.22, 1);
       for (let k = 0; k < DL; k++) for (let v = 0; v < 2; v++) {
-        const o = (edges.length + k) * 2 * LS + v * LS, q = k * 10 + v * 3;
+        const o = (E2 * SEG + k) * 2 * LS + v * LS, q = k * 10 + v * 3;
         ld[o] = ld[o + 3] = deco[q]; ld[o + 1] = ld[o + 4] = deco[q + 1]; ld[o + 2] = ld[o + 5] = deco[q + 2];
         ld[o + 6] = deco[k * 10 + 6]; ld[o + 7] = deco[k * 10 + 7]; ld[o + 8] = deco[k * 10 + 8]; ld[o + 9] = deco[k * 10 + 9];
         ld[o + 10] = v + 2 * ((k * 7) % 64); ld[o + 11] = -1;
       }
-      for (let k = 0; k < edges.length; k++) {
-        const ed = edges[k], same = model.cof[ed[0]] === model.cof[ed[1]];
-        for (let v = 0; v < 2; v++) {
-          const i = ed[v], o = (k * 2 + v) * LS, q = i * PS;
-          ld[o] = nd[q]; ld[o + 1] = nd[q + 1]; ld[o + 2] = nd[q + 2];
-          ld[o + 3] = nd[q + 3]; ld[o + 4] = nd[q + 4]; ld[o + 5] = nd[q + 5];
-          const c = model.clusters[model.cof[i]].lin;
-          ld[o + 6] = c[0]; ld[o + 7] = c[1]; ld[o + 8] = c[2]; ld[o + 9] = (same ? 0.5 : 0.24) * thin * (F === "galaxy" ? 0.4 : 1);
-          ld[o + 10] = v + 2 * ((k * 37) % 97); ld[o + 11] = model.cof[i];
+      const arc = (q0, q1, off, k, t, o, at) => {
+        // точка дуги между двумя заметками: середина отходит вбок, у каждой связи в свою сторону
+        const ax = nd[q0 + off], ay = nd[q0 + off + 1], az = nd[q0 + off + 2], dx = nd[q1 + off] - ax, dy = nd[q1 + off + 1] - ay, dz = nd[q1 + off + 2] - az;
+        const hx = hs(k, 1, 7) - 0.5, hy = hs(k, 2, 7) - 0.5, hz = hs(k, 3, 7) - 0.5;
+        let nx = dy * hz - dz * hy, ny = dz * hx - dx * hz, nz = dx * hy - dy * hx;
+        const nl = Math.hypot(nx, ny, nz) || 1, bl = Math.min(0.14 * Math.hypot(dx, dy, dz), 8) * Math.sin(Math.PI * t) / nl;
+        ld[o + at] = ax + dx * t + nx * bl; ld[o + at + 1] = ay + dy * t + ny * bl; ld[o + at + 2] = az + dz * t + nz * bl;
+      };
+      for (let k = 0; k < E2; k++) {
+        const ed = edges[k], same = model.cof[ed[0]] === model.cof[ed[1]], q0 = ed[0] * PS, q1 = ed[1] * PS;
+        const ca = model.clusters[model.cof[ed[0]]].lin, cb = model.clusters[model.cof[ed[1]]].lin;
+        const al = (same ? 0.5 : 0.24) * thin * (F === "galaxy" ? 0.4 : 1) * (SHP ? 0.22 : 1), ph = 2 * ((k * 37) % 97);
+        for (let sg = 0; sg < SEG; sg++) for (let v = 0; v < 2; v++) {
+          const t = (sg + v) / SEG, o = ((k * SEG + sg) * 2 + v) * LS;
+          arc(q0, q1, 0, k, t, o, 0); arc(q0, q1, 3, k, t, o, 3);
+          ld[o + 6] = ca[0] + (cb[0] - ca[0]) * t; ld[o + 7] = ca[1] + (cb[1] - ca[1]) * t; ld[o + 8] = ca[2] + (cb[2] - ca[2]) * t; ld[o + 9] = al;
+          ld[o + 10] = t * 0.999 + ph; ld[o + 11] = model.cof[t < 0.5 ? ed[0] : ed[1]];
+        }
+      }
+      if (fibN) {
+        const fr = SHP ? Math.min(reach, 6.5) : F === "organism" ? reach : reach * 0.55, base = (E2 * SEG + DL) * 2 * LS;
+        for (let i = 0; i < N; i++) for (let fb = 0; fb < FB; fb++) for (let sg = 0; sg < FSG; sg++) for (let v = 0; v < 2; v++) {
+          const t = (sg + v) / FSG, o = base + (((i * FB + fb) * FSG + sg) * 2 + v) * LS, q = i * PS;
+          branch(i, fb, t, dv);
+          ld[o] = nd[q] + dv[0] * fr; ld[o + 1] = nd[q + 1] + dv[1] * fr; ld[o + 2] = nd[q + 2] + dv[2] * fr;
+          ld[o + 3] = nd[q + 3] + dv[0] * fr; ld[o + 4] = nd[q + 4] + dv[1] * fr; ld[o + 5] = nd[q + 5] + dv[2] * fr;
+          ld[o + 6] = nd[q + 6]; ld[o + 7] = nd[q + 7]; ld[o + 8] = nd[q + 8]; ld[o + 9] = 0.42 * (1 - t) + 0.03;
+          ld[o + 10] = t * 0.999 + 2 * ((i * 13 + fb * 5) % 61); ld[o + 11] = model.cof[i];
         }
       }
 
       this.model = model;
       this.nodeData = nd; this.dustData = dd;
-      this.nodeN = N; this.dustN = Dn; this.lineN = (edges.length + DL) * 2;
+      this.nodeN = N; this.dustN = Dn; this.lineN = (E2 * SEG + DL + fibN) * 2;
       // старые вспышки остались бы на прежних местах
       for (let i = 0; i < this.fanData.length; i += FS) this.fanData[i + 9] = -1e6;
       gl.bindBuffer(gl.ARRAY_BUFFER, this.gFan.buf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.fanData);
@@ -1518,7 +1743,7 @@ const F3D = (function () {
           return;
         }
         if (ev.target !== this.host && ev.target.tagName !== "CANVAS") return;
-        if (ev.key === "Escape") { if (this.sel >= 0) this.select(-1); else if (this.isolate >= 0) this.focusCluster(-1); else this._togglePanel(false); }
+        if (ev.key === "Escape") { if (this.sel >= 0) this.select(-1); else if (this.isolate >= 0) this.focusCluster(-1); else { this._togglePanel(false); this._toggleCat(false); } }
         else if (ev.key === "f" || ev.key === "F" || ev.key === "а" || ev.key === "А") this.fit();
         else if (ev.key === " ") this.setMotion(!this.motionOn, true);
         else if (ev.key === "/") this.q.focus();
@@ -1685,7 +1910,7 @@ const F3D = (function () {
       const k = 1 - Math.exp(-dt * 7);
       C.yaw += (T.yaw - C.yaw) * k; C.pitch += (T.pitch - C.pitch) * k; C.dist += (T.dist - C.dist) * k;
       C.x += (T.x - C.x) * k; C.y += (T.y - C.y) * k; C.z += (T.z - C.z) * k;
-      if (this.mixT < 1) this.mixT = Math.min(1, this.mixT + Math.min(0.25, real) / 1.9);
+      if (this.mixT < 1) this.mixT = Math.min(1, this.mixT + Math.min(0.25, real) / (this.model && this.model.shape ? 3.0 : 2.3));
       const kd = 1 - Math.exp(-dt * 9);
       if (focusGoal >= 0) this.focusC = focusGoal; else if (this.dimCur > 0.985) this.focusC = -1;
       this.dimCur += (dimGoal - this.dimCur) * kd;
@@ -1704,7 +1929,9 @@ const F3D = (function () {
       this.pxScale = (T.scene.h * 0.5) / Math.tan(FOV / 2);
       const center = Math.hypot(ex, ey, ez);
       this.fog0 = Math.max(1, center - WORLD * 0.9); this.fog1 = center + WORLD * 1.35;
-      const mix = ease(this.mixT), motion = this.motionOn ? 1 : 0;
+      const mix = this.mixT, motion = this.motionOn ? 1 : 0;
+      const shp = this.model && this.model.shape, an = (shp && shp.anim) || {}, bmode = shp ? shp.build || 0 : 0;
+      const live = (pr) => { gl.uniform1f(pr.u.u_flap, an.flap || 0); gl.uniform1f(pr.u.u_sway, an.sway || 0); gl.uniform1f(pr.u.u_beat, an.beat || 0); };
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, T.scene.fbo);
       gl.viewport(0, 0, T.scene.w, T.scene.h);
@@ -1718,6 +1945,7 @@ const F3D = (function () {
       gl.useProgram(pl.p);
       gl.uniformMatrix4fv(pl.u.u_vp, false, this.VP);
       gl.uniform1f(pl.u.u_mix, mix); gl.uniform1f(pl.u.u_time, this.time); gl.uniform1f(pl.u.u_motion, motion);
+      gl.uniform1f(pl.u.u_build, bmode); live(pl);
       gl.uniform1f(pl.u.u_fog0, this.fog0); gl.uniform1f(pl.u.u_fog1, this.fog1);
       if (this.lineN && s.links > 0) {
         gl.uniform1f(pl.u.u_focusC, this.focusC); gl.uniform1f(pl.u.u_dim, this.dimCur);
@@ -1738,7 +1966,7 @@ const F3D = (function () {
         const pf = this.pFan;
         gl.useProgram(pf.p);
         gl.uniformMatrix4fv(pf.u.u_vp, false, this.VP);
-        gl.uniform1f(pf.u.u_time, this.time); gl.uniform1f(pf.u.u_motion, motion); gl.uniform1f(pf.u.u_dur, FAN_DUR);
+        gl.uniform1f(pf.u.u_time, this.time); gl.uniform1f(pf.u.u_motion, motion); gl.uniform1f(pf.u.u_dur, FAN_DUR); live(pf);
         gl.uniform1f(pf.u.u_fog0, this.fog0); gl.uniform1f(pf.u.u_fog1, this.fog1); gl.uniform1f(pf.u.u_dpr, this.dpr);
         gl.bindVertexArray(this.gFan.vao);
         gl.uniform1f(pf.u.u_pt, 0); gl.drawArrays(gl.LINES, 0, FAN_B * FAN_L * 2);
@@ -1750,6 +1978,7 @@ const F3D = (function () {
       gl.useProgram(pp.p);
       gl.uniformMatrix4fv(pp.u.u_vp, false, this.VP);
       gl.uniform1f(pp.u.u_mix, mix); gl.uniform1f(pp.u.u_time, this.time); gl.uniform1f(pp.u.u_motion, motion);
+      gl.uniform1f(pp.u.u_build, bmode); live(pp);
       gl.uniform1f(pp.u.u_px, this.pxScale); gl.uniform1f(pp.u.u_size, s.pointSize);
       gl.uniform1f(pp.u.u_fog0, this.fog0); gl.uniform1f(pp.u.u_fog1, this.fog1);
       gl.uniform1f(pp.u.u_dpr, this.dpr); gl.uniform1f(pp.u.u_maxPt, Math.min(this.maxPt, 120 * this.dpr));
@@ -1830,7 +2059,7 @@ const F3D = (function () {
     }
   }
 
-  return { Flora3D, buildModel, PALETTES, DEFAULTS };
+  return { Flora3D, buildModel, PALETTES, DEFAULTS, brainPoint };
 })();
 
 /* ------------------------------------------------------------------ */
@@ -1868,6 +2097,7 @@ class Flora3DView extends obsidian.ItemView {
     this.scene = new F3D.Flora3D(stage, {
       settings: this.plugin.settings.f3d,
       icon: (e, name) => { if (typeof obsidian.setIcon === "function") obsidian.setIcon(e, name); },
+      vaultName: this.app.vault.getName(),
       onOpen: (n, ev) => this.openNode(n, ev),
       onSave: (s) => {
         this.plugin.settings.f3d = Object.assign({}, s);
@@ -1876,7 +2106,10 @@ class Flora3DView extends obsidian.ItemView {
       },
       onProgress: (p) => { if (!finished) loader.set(L("Выращиваю организм", "Growing the organism") + "  " + Math.round(p * 100) + "%", p); },
       onReady: finish,
+      onWall: () => new FloraWallModal(this.app, this.plugin).open(),
     });
+    this.stageEl = stage;
+    this.setWall(this.plugin.settings.wall);
     await this.refresh();
 
     const later = () => { window.clearTimeout(this._timer); this._timer = window.setTimeout(() => this.refresh(), 1500); };
@@ -1890,11 +2123,13 @@ class Flora3DView extends obsidian.ItemView {
     window.clearTimeout(this._timer);
     window.clearTimeout(this._saveT);
     if (this._loader) { this._loader.remove(); this._loader = null; }
+    if (this.wall) { this.wall.destroy(); this.wall = null; }
     if (this.scene) this.scene.destroy();
     this.scene = null;
   }
 
   onResize() { if (this.scene) this.scene.resize(); }
+  setWall(id) { if (this.stageEl) this.wall = FloraWalls.under(this.stageEl, this.wall, id); }
 
   // заметки и настоящие ссылки между ними; ничего не выдумываем
   collect() {

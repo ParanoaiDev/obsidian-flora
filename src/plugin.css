@@ -124,7 +124,8 @@
   border: none; border-radius: 16px; corner-shape: squircle;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.4);
 }
-.ng-canvas .canvas-control-item, .ng-canvas .canvas-card-menu-button { color: rgba(235, 235, 245, 0.75); }
+/* сама кнопка прозрачная: в светлой теме Obsidian красит её в белый, и светлый значок на ней пропадает */
+.ng-canvas .canvas-control-item, .ng-canvas .canvas-card-menu-button { color: rgba(235, 235, 245, 0.86); background: transparent; box-shadow: none; }
 .ng-canvas .canvas-control-item:hover, .ng-canvas .canvas-card-menu-button:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
 
 /* =========================================================

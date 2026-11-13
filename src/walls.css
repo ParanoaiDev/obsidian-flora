@@ -1,0 +1,58 @@
+/* =========================================================
+   Живые обои: холст под интерфейсом и выбор обоев
+   ========================================================= */
+.fl-wall-canvas {
+  position: absolute; left: 0; top: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(circle, rgba(140, 150, 180, 0.09) 1px, transparent 1.3px) 0 0 / 12px 12px,
+    linear-gradient(160deg, var(--fl-wall-a, #000), var(--fl-wall-b, #000) 55%, var(--fl-wall-c, #000));
+}
+body.ng-wall .app-container { position: relative; isolation: isolate; background: var(--fl-bg); }
+/* панели над обоями: насколько они плотные, выбирает человек — «плотно», «поровну» или «обои впереди» */
+body.ng-wall { --fl-wall-card: 58%; --fl-wall-side: 44%; --fl-wall-blur: 5px; }
+body.ng-wall[data-flora-wall-glass="solid"] { --fl-wall-card: 84%; --fl-wall-side: 66%; --fl-wall-blur: 18px; }
+body.ng-wall[data-flora-wall-glass="clear"] { --fl-wall-card: 32%; --fl-wall-side: 24%; --fl-wall-blur: 1.5px; }
+body.ng-skin.ng-wall .workspace-split.mod-root .workspace-leaf {
+  background: color-mix(in srgb, var(--fl-surface) var(--fl-wall-card), transparent);
+  -webkit-backdrop-filter: blur(var(--fl-wall-blur)) saturate(140%); backdrop-filter: blur(var(--fl-wall-blur)) saturate(140%);
+}
+body.ng-skin.ng-wall .workspace-split.mod-root .workspace-leaf-content { background: transparent; }
+body.ng-skin.ng-wall .workspace-split.mod-sidedock > .workspace-tabs,
+body.ng-skin.ng-wall .workspace-ribbon.mod-left .side-dock-actions,
+body.ng-skin.ng-wall .workspace-ribbon.mod-left .side-dock-settings {
+  background: color-mix(in srgb, var(--fl-surface) var(--fl-wall-side), transparent);
+  -webkit-backdrop-filter: blur(var(--fl-wall-blur)) saturate(150%); backdrop-filter: blur(var(--fl-wall-blur)) saturate(150%);
+}
+/* текст поверх живого фона: лёгкая подложка под буквами, чтобы строки не терялись */
+body.ng-skin.ng-wall[data-flora-wall-glass="clear"] .workspace-split.mod-root .view-content { text-shadow: 0 0 6px var(--fl-surface), 0 0 2px var(--fl-surface); }
+
+/* обои под сценой раздела: чёрный фон сцены становится прозрачным, свет нейронов ложится поверх */
+.fl-wall-on { isolation: isolate; }
+.fl-wall-under { filter: brightness(0.6) saturate(1.05); }
+.fl-wall-on > canvas.ng-gl, .fl-wall-on > canvas.ng-canvas-gl, .f3d.fl-wall-on > .f3d-canvas { mix-blend-mode: screen; }
+
+/* над обоями значки ленты и названия вкладок контрастнее: фон под ними теперь цветной */
+body.ng-skin.ng-wall .side-dock-ribbon-action { color: var(--fl-label); opacity: 0.86; }
+body.ng-skin.ng-wall .side-dock-ribbon-action:hover { opacity: 1; }
+body.ng-skin.ng-wall .workspace-tab-header:not(.is-active) .workspace-tab-header-inner { color: var(--fl-label); opacity: 0.82; }
+
+/* выбор обоев */
+.fl-wall-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 4px 0 18px; }
+.fl-wall-card {
+  position: relative; isolation: isolate; height: 96px; padding: 0; border: none; border-radius: 14px; overflow: hidden; cursor: pointer;
+  display: flex; align-items: flex-end; background: var(--background-secondary, #1c1c1e);
+  box-shadow: 0 0 0 1px var(--background-modifier-border, rgba(128, 128, 128, 0.3));
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.fl-wall-card:hover { transform: translateY(-2px); }
+.fl-wall-card.is-on { box-shadow: 0 0 0 2.5px var(--interactive-accent, #0a84ff); }
+.fl-wall-card span {
+  margin: 0 0 7px 8px; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+}
+.fl-wall-card.is-none { align-items: center; justify-content: center; }
+.fl-wall-card.is-none span { margin: 0; background: transparent; color: var(--text-muted, #888); }
+.fl-wall-glass { display: flex; align-items: center; gap: 8px; margin: -6px 0 18px; flex-wrap: wrap; }
+.fl-wall-glass-name { color: var(--text-muted, #888); font-size: 13px; margin-right: 4px; }
+.fl-wall-glass button.is-on { background: var(--interactive-accent, #0a84ff); color: var(--text-on-accent, #fff); }
+@media (prefers-reduced-motion: reduce) { .fl-wall-card { transition: none; } }

@@ -3,7 +3,7 @@
 /* Обёртка для Obsidian                                                */
 /* ------------------------------------------------------------------ */
 const VIEW_TYPE = "neural-graph";
-const DEFAULTS = { lang: "auto", cards: true, orphans: true, unresolved: false, activity: 1, skinGraph: true, skinLocal: true, skinHud: true, skinCanvas: true, skinDaily: true, autoTasks: true, fullSkin: true, labScreen: true, accent: "blue" };
+const DEFAULTS = { lang: "auto", cards: true, orphans: true, unresolved: false, activity: 1, skinGraph: true, skinLocal: true, skinHud: true, skinCanvas: true, skinDaily: true, autoTasks: true, fullSkin: true, labScreen: true, accent: "blue", wall: "none" };
 
 class NeuralGraphView extends obsidian.ItemView {
   constructor(leaf, plugin) {
@@ -42,6 +42,8 @@ class NeuralGraphView extends obsidian.ItemView {
     this.renderer.hold = true; // ткань проявляется вместе с уходом заставки
     this._loader = loader;
     this.buildControls(wrap);
+    this.wrapEl = wrap;
+    this.setWall(this.plugin.settings.wall);
     await this.refresh();
     if (this.renderer && !this.renderer.nodes.length) finish(); // пустое хранилище
 
@@ -57,11 +59,14 @@ class NeuralGraphView extends obsidian.ItemView {
     window.clearTimeout(this._timer);
     if (this._loader) { this._loader.remove(); this._loader = null; }
     this.closeTimeline();
+    if (this.web) { this.web.destroy(); this.web = null; }
+    if (this.wall) { this.wall.destroy(); this.wall = null; }
     if (this.renderer) this.renderer.destroy();
     this.renderer = null;
   }
 
   onResize() { if (this.renderer) this.renderer.resize(); }
+  setWall(id) { if (this.wrapEl) this.wall = FloraWalls.under(this.wrapEl, this.wall, id); }
 
   buildControls(wrap) {
     const s = this.plugin.settings;
@@ -101,6 +106,8 @@ class NeuralGraphView extends obsidian.ItemView {
       this.renderer.opts.activity = s.activity;
       await this.plugin.saveSettings();
     };
+    const wl = btn(view, "image", "", L("Живые обои", "Live wallpaper"));
+    wl.onclick = () => new FloraWallModal(this.app, this.plugin).open();
     const fit = btn(view, "scan", "", L("Показать всё (или двойной клик по фону)", "Fit all (or double-click the background)"));
     fit.onclick = () => this.renderer.fit(false);
     // таймлайн
@@ -111,6 +118,17 @@ class NeuralGraphView extends obsidian.ItemView {
       if (on) this.openTimeline(wrap); else this.closeTimeline();
     };
     this.tlBtn = tlBtn;
+    // паук: проходит по графу и находит связи, которых ещё нет
+    const spBtn = btn(view, "bug", L("Паук", "Spider"), L("Паук пройдёт по графу и найдёт связи, которых ещё нет", "The spider walks the graph and finds links that are missing"));
+    spBtn.onclick = () => {
+      if (this.web) { this.web.destroy(); this.web = null; spBtn.toggleClass("is-on", false); return; }
+      spBtn.toggleClass("is-on", true);
+      this.web = new FloraSpider.Web(this.renderer, wrap, {
+        app: this.app, icon: ico,
+        open: (path, ev) => this.openNode({ path }, ev),
+        onClose: () => { this.web = null; spBtn.toggleClass("is-on", false); },
+      });
+    };
   }
 
   /* ---------- таймлайн ---------- */
@@ -298,6 +316,7 @@ class NeuralGraphView extends obsidian.ItemView {
 
 class NeuralGraphSettingTab extends obsidian.PluginSettingTab {
   constructor(app, plugin) { super(app, plugin); this.plugin = plugin; }
+  hide() { if (this.picker) { this.picker.destroy(); this.picker = null; } }
   display() {
     const { containerEl } = this;
     const s = this.plugin.settings;
@@ -324,6 +343,12 @@ class NeuralGraphSettingTab extends obsidian.PluginSettingTab {
         for (const [v, l] of [["blue", L("Синий", "Blue")], ["green", L("Зелёный", "Green")], ["orange", L("Оранжевый", "Orange")], ["pink", L("Розовый", "Pink")], ["graphite", L("Графит", "Graphite")]]) d.addOption(v, l);
         d.setValue(s.accent || "blue").onChange(async (v) => { s.accent = v; await this.plugin.saveSettings(); this.plugin.applySkin(); });
       });
+    new obsidian.Setting(containerEl).setName(L("Живые обои", "Live wallpaper")).setHeading();
+    new obsidian.Setting(containerEl)
+      .setName(L("Фон из живых клеточек", "A background of living cells"))
+      .setDesc(L("Фон под всем интерфейсом: картинка из клеточек-символов, которая всё время тихо движется. Работает вместе с дизайном Flora. Выбрать можно и командой «Выбрать обои».", "A background under the whole interface: a picture made of character cells that is always gently moving. Works together with the Flora design. You can also pick one with the \"Choose wallpaper\" command."));
+    if (this.picker) this.picker.destroy();
+    this.picker = floraWallPicker(this.plugin, containerEl);
     new obsidian.Setting(containerEl)
       .setName(L("Стартовый экран в пустой вкладке", "Start screen in empty tabs"))
       .setDesc(L("Вместо «Нет открытых файлов» — живая ткань, быстрые действия и недавние заметки.", "Shows living tissue, quick actions and recent notes instead of \"No file is open\"."))
@@ -366,6 +391,45 @@ class NeuralGraphSettingTab extends obsidian.PluginSettingTab {
   }
 }
 
+// сетка с живыми миниатюрами обоев; возвращает { destroy }
+function floraWallPicker(plugin, parent) {
+  const grid = parent.createDiv({ cls: "fl-wall-grid" }), thumbs = [], cards = [];
+  const dark = () => parent.ownerDocument.body.classList.contains("theme-dark");
+  const sync = () => cards.forEach(([id, c]) => c.toggleClass("is-on", (plugin.settings.wall || "none") === id));
+  const pick = async (id) => { plugin.settings.wall = id; sync(); await plugin.saveSettings(); plugin.applyWall(); };
+  const none = grid.createEl("button", { cls: "fl-wall-card is-none" });
+  none.createSpan({ text: L("Без обоев", "No wallpaper") });
+  none.onclick = () => pick("none");
+  cards.push(["none", none]);
+  for (const w of FloraWalls.LIST) {
+    const c = grid.createEl("button", { cls: "fl-wall-card", attr: { "aria-label": w.name() } });
+    c.createSpan({ text: w.name() });
+    thumbs.push(new FloraWalls.Wall(c, { id: w.id, cell: 6, fps: 8, dark }));
+    c.onclick = () => pick(w.id);
+    cards.push([w.id, c]);
+  }
+  // насколько плотные панели лежат над обоями
+  const row = parent.createDiv({ cls: "fl-wall-glass" }), gl = [];
+  row.createSpan({ cls: "fl-wall-glass-name", text: L("Панели над обоями:", "Panels over the wallpaper:") });
+  for (const [v, name] of [["solid", L("Плотные", "Solid")], ["mid", L("Поровну", "Balanced")], ["clear", L("Обои впереди", "Wallpaper first")]]) {
+    const b = row.createEl("button", { text: name });
+    b.onclick = async () => { plugin.settings.wallGlass = v; gl.forEach(([x, e]) => e.toggleClass("is-on", x === v)); await plugin.saveSettings(); plugin.applyWall(); };
+    b.toggleClass("is-on", (plugin.settings.wallGlass || "mid") === v);
+    gl.push([v, b]);
+  }
+  sync();
+  return { destroy() { for (const t of thumbs) t.destroy(); thumbs.length = 0; } };
+}
+
+class FloraWallModal extends obsidian.Modal {
+  constructor(app, plugin) { super(app); this.plugin = plugin; }
+  onOpen() {
+    this.titleEl.setText(L("Живые обои", "Live wallpaper"));
+    this.picker = floraWallPicker(this.plugin, this.contentEl);
+  }
+  onClose() { if (this.picker) this.picker.destroy(); this.contentEl.empty(); }
+}
+
 class NeuralGraphPlugin extends obsidian.Plugin {
   async onload() {
     this.settings = Object.assign({}, DEFAULTS, await this.loadData());
@@ -383,10 +447,13 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     // Flora 3D: объёмный организм хранилища
     this.registerView(FLORA3D_VIEW, (leaf) => new Flora3DView(leaf, this));
     this.addRibbonIcon("atom", "Flora 3D", () => this.openFlora3D());
+    this.addRibbonIcon("image", L("Живые обои Flora", "Flora live wallpaper"), () => new FloraWallModal(this.app, this).open());
     this.addCommand({ id: "open-3d", name: L("Открыть Flora 3D", "Open Flora 3D"), callback: () => this.openFlora3D() });
     this.addSettingTab(new NeuralGraphSettingTab(this.app, this));
     // полный дизайн интерфейса
     this.applySkin();
+    this.addCommand({ id: "choose-wallpaper", name: L("Выбрать обои", "Choose wallpaper"), callback: () => new FloraWallModal(this.app, this).open() });
+    this.app.workspace.onLayoutReady(() => this.applyWall());
     // расследование
     this.cases = new CaseStore(this.app);
     this.registerView(CASE_VIEW, (leaf) => new CaseView(leaf, this));
@@ -428,7 +495,7 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     this.app.workspace.onLayoutReady(() => this.syncSkins());
     this.registerEvent(this.app.workspace.on("layout-change", () => this.syncSkins()));
     this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.syncSkins()));
-    this.registerInterval(window.setInterval(() => this.syncSkins(), 1000));
+    this.registerInterval(window.setInterval(() => { this.syncSkins(); this.syncSceneWalls(); }, 1000));
     // всплывающее окно получает дизайн Flora сразу при открытии
     this.registerEvent(this.app.workspace.on("window-open", () => this.applySkin()));
   }
@@ -442,7 +509,8 @@ class NeuralGraphPlugin extends obsidian.Plugin {
   }
 
   onunload() {
-    this.forEachDoc((d) => { d.body.classList.remove("ng-skin"); delete d.body.dataset.floraAccent; });
+    this.forEachDoc((d) => { d.body.classList.remove("ng-skin", "ng-wall"); delete d.body.dataset.floraAccent; delete d.body.dataset.floraWallGlass; });
+    if (this.walls) { for (const w of this.walls.values()) w.destroy(); this.walls.clear(); }
     if (this.labs) { for (const l of this.labs.values()) l.destroy(); this.labs.clear(); }
     for (const leaf of [...this.skins.keys()]) this.dropSkin(leaf);
     for (const h of this.days.values()) h.destroy();
@@ -456,6 +524,39 @@ class NeuralGraphPlugin extends obsidian.Plugin {
       b.classList.toggle("ng-skin", !!this.settings.fullSkin);
       if (this.settings.fullSkin && a !== "blue") b.dataset.floraAccent = a; else delete b.dataset.floraAccent;
     });
+    this.applyWall();
+  }
+
+  // обои под остальными сценами Flora: холсты, обычный граф, стартовый экран
+  syncSceneWalls() {
+    const id = this.settings.wall || "none";
+    const one = (o, host) => {
+      if (!host) return;
+      const live = o.wall && o.wall.cv.isConnected;
+      if (o.wallId !== id || (o.wall && !live)) { o.wall = FloraWalls.under(host, live ? o.wall : null, id); o.wallId = id; }
+    };
+    if (this.skins) for (const sk of this.skins.values()) one(sk, sk.kind === "canvas" ? sk.wrap : sk.container);
+    if (this.labs) for (const l of this.labs.values()) one(l, l.el);
+  }
+
+  // живые обои: холст под интерфейсом в каждом окне Obsidian
+  applyWall() {
+    if (!this.walls) this.walls = new Map();
+    const id = this.settings.fullSkin ? this.settings.wall : "none", on = !!FloraWalls.get(id), live = new Set();
+    this.forEachDoc((d) => {
+      d.body.classList.toggle("ng-wall", on);
+      if (on) d.body.dataset.floraWallGlass = this.settings.wallGlass || "mid"; else delete d.body.dataset.floraWallGlass;
+      const host = d.querySelector(".app-container");
+      if (!on || !host) return;
+      live.add(d);
+      const w = this.walls.get(d);
+      if (w && w.cv.isConnected) w.set(id);
+      else this.walls.set(d, new FloraWalls.Wall(host, { id, dark: () => d.body.classList.contains("theme-dark") }));
+    });
+    for (const [d, w] of [...this.walls]) if (!live.has(d)) { w.destroy(); this.walls.delete(d); }
+    // свои разделы Flora: те же обои под Нейрографом и Flora 3D
+    for (const type of [VIEW_TYPE, FLORA3D_VIEW]) for (const leaf of this.app.workspace.getLeavesOfType(type)) if (leaf.view && typeof leaf.view.setWall === "function") leaf.view.setWall(this.settings.wall);
+    this.syncSceneWalls();
   }
 
   async openCaseBoard(path) {
@@ -524,6 +625,7 @@ class NeuralGraphPlugin extends obsidian.Plugin {
             onDead: () => this.dropSkin(leaf),
           });
           this.skins.set(leaf, skin);
+          if (type === "graph") this.addSpiderButton(skin);
         } catch (e) {
           console.error(L("Нейрограф: не удалось подключиться к графу", "Neurograph: could not attach to the graph"), e);
         }
@@ -531,10 +633,34 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     }
   }
 
+  // кнопка паука в обычном графе Obsidian
+  addSpiderButton(skin) {
+    const host = skin.container, doc = host.ownerDocument, b = doc.createElement("button");
+    const icon = (el, name) => { if (typeof obsidian.setIcon === "function") obsidian.setIcon(el, name); };
+    b.className = "fsp-open ng-glass-dark"; b.type = "button";
+    b.setAttribute("aria-label", L("Паук пройдёт по графу и найдёт связи, которых ещё нет", "The spider walks the graph and finds links that are missing"));
+    icon(b.appendChild(doc.createElement("span")), "bug");
+    b.appendChild(doc.createElement("span")).textContent = L("Паук", "Spider");
+    host.appendChild(b);
+    b.onclick = () => {
+      if (skin.web) { skin.web.destroy(); skin.web = null; b.classList.remove("is-on"); return; }
+      b.classList.add("is-on");
+      skin.web = new FloraSpider.Web(skin.R, host, {
+        app: this.app, icon,
+        open: (path) => { const f = this.app.vault.getAbstractFileByPath(path); if (f instanceof obsidian.TFile) this.app.workspace.getLeaf("tab").openFile(f); },
+        onClose: () => { skin.web = null; b.classList.remove("is-on"); },
+      });
+    };
+    skin.spiderBtn = b;
+  }
+
   dropSkin(leaf) {
     const sk = this.skins.get(leaf);
     if (!sk) return;
     this.skins.delete(leaf);
+    if (sk.web) sk.web.destroy();
+    if (sk.wall) { sk.wall.destroy(); const h = sk.kind === "canvas" ? sk.wrap : sk.container; if (h) h.classList.remove("fl-wall-on"); }
+    if (sk.spiderBtn) sk.spiderBtn.remove();
     try { sk.destroy(); } catch (e) { console.error(e); }
   }
 

@@ -7,7 +7,7 @@ Ideas for what comes next. Nothing here has a date, and the order can change.
 - [ ] Settings preview: see the accent color and the design change live while you pick
 - [ ] Neurograph search: type to light up matching cells and fly to them
 - [ ] Export a still of the Neurograph, Flora 3D or a canvas as a PNG
-- [ ] Flora 3D: more shapes, and the timeline in 3D
+- [ ] Flora 3D: the timeline in 3D
 
 ## Later
 
@@ -18,6 +18,7 @@ Ideas for what comes next. Nothing here has a date, and the order can change.
 
 ## Done
 
+- [x] Shape catalog with 17 shapes, the spider that finds missing links, live wallpapers (6.0.0)
 - [x] Flora 3D: the vault as a 3D organism of particles (5.5.0)
 - [x] Timeline for the Neurograph, Flora loading screen, a faster engine without shaking neurons (5.4.0)
 - [x] Listed in the Obsidian community directory, plus one-command installers for Windows, macOS and Linux

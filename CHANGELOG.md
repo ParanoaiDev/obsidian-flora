@@ -2,6 +2,24 @@
 
 All notable changes to Flora are listed here. Versions follow [semantic versioning](https://semver.org).
 
+## 6.0.0
+
+### Added
+- **Shape catalog** in Flora 3D. The neurons can now build twelve new figures: a human with a brain, spinal cord and nerves, a heart, an eye, a single neuron, DNA, the Flora flower, a tree, a butterfly, a jellyfish, a spider, a knot and a ringed planet. Groups of notes lie on a figure in bands of their own colour.
+- **From yours**: type a word or a title and the neurons spell it out, or pick a picture and they repeat its outline.
+- Figures are built step by step, from the bottom up, from the centre or left to right, and **Build again** replays it. Some figures are alive: the heart beats, the butterfly moves its wings, the jellyfish sways.
+- Every neuron has its own curved dendrites, and links between notes are drawn as soft arcs instead of straight lines.
+- **Live wallpapers** for the Flora design: eight backgrounds painted in character cells that are always gently moving (Bloom, Neurons, Clouds, Pond, Jellyfish, Fireflies, Moonlit, Aurora), each with a dark and a light version. Pick one in the settings or with the **Choose wallpaper** command; the text card turns translucent so the wallpaper shows under your notes.
+- **Spider** in the Neurograph and in the Obsidian graph view. A spider made of neurons walks the graph, reads your notes and finds links that are missing: a note mentioned by name without a link, notes that share rare tags, notes with similar titles. Findings appear in a list as it weaves a thread between the two notes; click one to open the note. Everything runs on your computer, and the spider never changes a note.
+- Live wallpapers also show under Flora's own scenes: the Neurograph, Flora 3D, canvases, the graph view and the start screen. The scene's light is laid over the wallpaper.
+- A **Flora live wallpaper** icon in the left ribbon, wallpaper buttons in the Neurograph and Flora 3D toolbars, and three levels of glass over the wallpaper: **Solid**, **Balanced** and **Wallpaper first**.
+
+### Changed
+- Changing the shape in Flora 3D is smooth: every particle keeps its colour and flows into the new one on the way, instead of the whole shape changing colour at once. Particles in flight are dimmer, so there is no white flash in the middle.
+
+### Fixed
+- Canvas controls and ribbon icons are visible again in the light theme when the neural canvas or a wallpaper is on.
+
 ## 5.5.0
 
 ### Added
