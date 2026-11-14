@@ -38,11 +38,53 @@ and signals run along them while you think.
 
 ## 🆕 New in 6.0
 
-- **Shape catalog.** In Flora 3D your notes can now build a human, a heart, an eye, DNA, a butterfly, a jellyfish and more: 17 shapes in one catalog. Or type a word, or pick a picture, and the neurons build that.
-- **The Spider.** A spider made of neurons walks your graph and finds the links you forgot to make. It runs on your computer and never changes a note.
-- **Live wallpapers.** Eight gently moving scenes under your notes and under every Flora view.
+<div align="center">
 
-The full list is in the [changelog](CHANGELOG.md).
+### Your notes can take any shape
+
+<img src="assets/demo/shapes.webp" alt="Animated demo: in Flora 3D the same vault flies apart and gathers into a heart, a butterfly, a jellyfish, DNA and a human figure" width="100%" />
+
+<sub>Captured from Flora 3D in Obsidian. One vault, five shapes: a human, a heart, a butterfly, a jellyfish and DNA.</sub>
+
+</div>
+
+Flora 3D now has a **shape catalog** with 17 shapes. Five of them follow your links, twelve are figures that the neurons build step by step. Some are alive: the heart beats, the butterfly moves its wings, the jellyfish sways. You can also type a word or pick a picture, and the neurons build that.
+
+<div align="center">
+
+<img src="assets/screenshots/shapes.webp" alt="Eight Flora 3D shapes built from the same vault: human, heart, eye, DNA, butterfly, jellyfish, flower and a ringed planet" width="100%" />
+
+<sub>Human, heart, eye, DNA, butterfly, jellyfish, flower and planet. The bright stars are your notes, the dust around them fills in the figure.</sub>
+
+<br />
+<br />
+
+### A spider that finds the links you forgot
+
+<img src="assets/screenshots/spider.webp" alt="The spider walks the Neurograph while a panel lists the missing links it has found between notes" width="100%" />
+
+</div>
+
+Press the **Spider** button in the Neurograph or in the graph view. A spider made of neurons walks your graph, reads the notes and lists the links that are missing: a note mentioned by name without a link, notes that share rare tags, notes with similar titles. Click a finding to open the note and add the link yourself. The spider works on your computer and never changes a note.
+
+<div align="center">
+
+<br />
+
+### Live wallpapers under your notes
+
+<img src="assets/screenshots/wallpaper-dark.webp" alt="A note in dark mode over the Moonlit wallpaper" width="49%" />
+<img src="assets/screenshots/wallpaper-light.webp" alt="The same note in light mode over the Bloom wallpaper" width="49%" />
+
+<img src="assets/screenshots/wallpapers.webp" alt="All eight live wallpapers behind the same note, four in dark mode and four in light mode" width="100%" />
+
+<sub>Bloom, Neurons, Pond and Aurora in dark mode. Clouds, Jellyfish, Fireflies and Moonlit in light mode.</sub>
+
+</div>
+
+Eight backgrounds painted in small cells that are always gently moving. Each has a dark and a light version, and you choose how solid the glass over it is. The wallpaper also shows under the Neurograph, Flora 3D, canvases and the graph view.
+
+Everything else that changed is in the [changelog](CHANGELOG.md).
 
 <br />
 
@@ -63,23 +105,35 @@ A view of your whole vault as living tissue. Big notes grow crowns of dendrites,
 
 **Timeline** replays how the vault grew: notes bloom in the order you created them and links grow between them. Play it, change the speed or drag to any date.
 
-**Flora 3D** shows the same vault in depth: every note is a neuron with a bright core and its own dendrites, links are fine threads, and tens of thousands of particles gather around them into one glowing organism. Rotate it, fly into a group, pick a note to send light along its links, search by name, `#tag` or folder. Neurons fire in fans of light, pulses run along the links, and waves of activity drift through the whole shape. Group by folders, tags or links and choose one of seven palettes.
-
-The **shape catalog** has 17 shapes. Five follow your links (organism, brain, nerves, spheres, galaxy); twelve are figures the neurons build step by step: a human, a heart, an eye, a neuron, DNA, a flower, a tree, a butterfly, a jellyfish, a spider, a knot and a ringed planet. Some are alive: the heart beats, the butterfly moves its wings, the jellyfish sways. You can also type a word or pick a picture and watch the neurons build it. Changing the shape is one smooth flight, with every particle keeping its colour on the way.
-
 </td>
 </tr>
 <tr>
+<td valign="top">
+
+### 🧬 Flora 3D
+The same vault in depth. Every note is a neuron with a bright core and its own dendrites, links are fine threads, and tens of thousands of particles gather around them into one glowing organism. Rotate it, fly into a group, pick a note to send light along its links, search by name, `#tag` or folder.
+
+The **shape catalog** has 17 shapes: organism, brain, nerves, spheres and galaxy follow your links, and a human, a heart, an eye, a neuron, DNA, a flower, a tree, a butterfly, a jellyfish, a spider, a knot and a ringed planet are built step by step. Or build your own from a word or a picture. Group by folders, tags or links and choose one of seven palettes.
+
+</td>
 <td valign="top">
 
 ### 🕸️ Graph view, re-drawn
 The built-in graph and the local graph keep everything you rely on (filters, groups, colors, search, dragging) and are simply drawn as neurons instead of dots.
 
 </td>
+</tr>
+<tr>
 <td valign="top">
 
 ### 🌌 Canvas
 A deep-space backdrop with soft nebulae, dark glass cards, and connections that become living axons. Pulses travel along the arrows and hand off to the next card in the chain.
+
+</td>
+<td valign="top">
+
+### 🌱 Start screen
+Every empty tab opens to a greeting, a search box, quick actions and your recent notes over living neurons, instead of "No file is open".
 
 </td>
 </tr>
@@ -101,13 +155,13 @@ A case board for OSINT and research: entities (people, organizations, accounts, 
 <td valign="top">
 
 ### 🕷️ The Spider
-Press the spider button in the Neurograph or the graph view. A spider made of neurons walks the graph, reads your notes and looks for links that are missing: a note mentioned by name without a link, notes that share rare tags, notes with similar titles. It weaves a thread between the two notes and lists every finding; click one to open the note and add the link yourself. Nothing leaves your computer, and the spider never edits a note.
+A spider made of neurons walks the graph and looks for links that are missing: a note mentioned by name without a link, notes that share rare tags, notes with similar titles. It weaves a thread between the two notes and lists every finding. Nothing leaves your computer, and the spider never edits a note.
 
 </td>
 <td valign="top">
 
 ### 🖼️ Live wallpapers
-Eight backgrounds painted in small cells that are always gently moving: Bloom, Neurons, Clouds, Pond, Jellyfish, Fireflies, Moonlit and Aurora, each in a dark and a light version. The wallpaper lives under the glass of your notes and under the Neurograph, Flora 3D, canvases and the graph view. Choose how solid the glass is: solid, balanced or wallpaper first.
+Eight moving backgrounds: Bloom, Neurons, Clouds, Pond, Jellyfish, Fireflies, Moonlit and Aurora, each in a dark and a light version. They live under the glass of your notes and under every Flora view. Choose how solid the glass is: solid, balanced or wallpaper first.
 
 </td>
 </tr>
@@ -120,6 +174,15 @@ Every part can be switched on and off on its own in **Settings → Flora**.
 ## 📸 Gallery
 
 <div align="center">
+
+### Before and after
+
+<img src="assets/screenshots/before-after.webp" alt="One screen split in two: the built-in graph view on the left, the same graph drawn by Flora on the right" width="100%" />
+
+<sub>Left: the graph view as it comes. Right: the same screen with Flora turned on.</sub>
+
+<br />
+<br />
 
 ### The whole app, in light and dark
 
@@ -136,6 +199,15 @@ Every part can be switched on and off on its own in **Settings → Flora**.
 <img src="assets/screenshots/neurons-closeup.webp" alt="Close-up of glowing neurons in the Neurograph" width="100%" />
 
 <sub>Up close, each note is a cell with a nucleus, a wobbling membrane and its own dendrites. Signals fire on their own and spread along real links.</sub>
+
+<br />
+<br />
+
+### Flora 3D
+
+<img src="assets/screenshots/shape-catalog.webp" alt="Flora 3D with the shape catalog open: a word field, a picture button and 17 shapes in four groups" width="100%" />
+
+<sub>The shape catalog: 17 shapes in four groups, plus your own word or picture.</sub>
 
 <br />
 <br />
