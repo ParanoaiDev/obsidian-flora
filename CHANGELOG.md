@@ -2,6 +2,11 @@
 
 All notable changes to Flora are listed here. Versions follow [semantic versioning](https://semver.org).
 
+## 6.0.3
+
+### Changed
+- Same code as 6.0.2, released again because the community directory's automated check timed out while downloading 6.0.2.
+
 ## 6.0.2
 
 ### Fixed
