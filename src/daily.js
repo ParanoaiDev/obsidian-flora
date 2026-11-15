@@ -34,13 +34,18 @@ class DailyTools {
   }
   isoOf(date) { return date.getFullYear() + "-" + pad2(date.getMonth() + 1) + "-" + pad2(date.getDate()); }
   fromIso(s) { const r = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ""); return r ? new Date(+r[1], +r[2] - 1, +r[3]) : null; }
-  /** имя файла совпадает с форматом дня в папке ежедневных заметок */
-  dayByName(file) {
+  /** путь файла совпадает с форматом дня в папке ежедневных заметок */
+  dayByName(file) { return this.dateFromPath(file.path); }
+  // Формат может содержать подпапки (например YYYY/MM-MMMM/DD-MM-YYYY-dddd),
+  // поэтому сравниваем с форматом весь путь внутри папки, а не только имя файла.
+  dateFromPath(path) {
     const o = this.options();
-    const parent = file.parent ? file.parent.path : "";
-    const norm = parent === "/" ? "" : parent;
-    if (norm !== o.folder) return null;
-    return this.parse(file.basename, o.format);
+    let rel = String(path || "").replace(/\.md$/i, "");
+    if (o.folder) {
+      if (!rel.startsWith(o.folder + "/")) return null;
+      rel = rel.slice(o.folder.length + 1);
+    }
+    return this.parse(rel, o.format);
   }
   /** журнал узнаётся по разделам заготовки — для заметок, переименованных раньше */
   looksLikeJournal(file) {
@@ -61,13 +66,7 @@ class DailyTools {
     if (!file || file.extension !== "md") return;
     const map = this.store.get();
     let date = this.fromIso(map[oldPath]);
-    if (!date) {
-      const o = this.options();
-      const slash = oldPath.lastIndexOf("/");
-      const oldParent = slash < 0 ? "" : oldPath.slice(0, slash);
-      const oldBase = oldPath.slice(slash + 1).replace(/\.md$/i, "");
-      if (oldParent === o.folder) date = this.parse(oldBase, o.format);
-    }
+    if (!date) date = this.dateFromPath(oldPath);
     if (map[oldPath]) delete map[oldPath];
     if (date && !this.dayByName(file)) map[file.path] = this.isoOf(date);
     else if (map[file.path]) delete map[file.path];
@@ -145,9 +144,17 @@ class DailyTools {
   async openDay(date, leaf) {
     let f = this.fileFor(date);
     if (!f) {
-      const o = this.options();
-      if (o.folder && !this.app.vault.getAbstractFileByPath(obsidian.normalizePath(o.folder))) await this.app.vault.createFolder(obsidian.normalizePath(o.folder));
-      f = await this.app.vault.create(this.pathFor(date), await this.templateText(date));
+      const path = this.pathFor(date);
+      // создаём все недостающие папки на пути, включая подпапки из формата даты
+      const slash = path.lastIndexOf("/");
+      if (slash > 0) {
+        let cur = "";
+        for (const part of path.slice(0, slash).split("/")) {
+          cur = cur ? cur + "/" + part : part;
+          if (!this.app.vault.getAbstractFileByPath(cur)) await this.app.vault.createFolder(cur);
+        }
+      }
+      f = await this.app.vault.create(path, await this.templateText(date));
     }
     await (leaf || this.app.workspace.getLeaf(false)).openFile(f);
   }

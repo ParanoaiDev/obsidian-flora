@@ -72,7 +72,7 @@ const FloraSpider = (function () {
           hits.set(t.path, (hits.get(t.path) || 0) + 1);
         }
       }
-      if (i % 12 === 0) { onProgress && onProgress(i + 1, N, 0); await new Promise((r) => setTimeout(r, 0)); }
+      if (i % 12 === 0) { onProgress && onProgress(i + 1, N, 0); await new Promise((r) => window.setTimeout(r, 0)); }
     }
     onProgress && onProgress(N, N, 1);
     // слишком общее слово (упомянуто в трети хранилища) связью не считаем

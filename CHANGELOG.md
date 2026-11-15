@@ -2,6 +2,12 @@
 
 All notable changes to Flora are listed here. Versions follow [semantic versioning](https://semver.org).
 
+## 6.0.2
+
+### Fixed
+- Today's journal works when the Daily notes date format has folders in it, for example `YYYY/MM-MMMM/DD-MM-YYYY-dddd`. Flora now matches the whole path inside the daily notes folder against the format, so the journal header, the month dots and the day-to-day buttons find these notes, and a new day creates every missing folder on its path. Reported with a fix in [#1](https://github.com/ParanoaiDev/obsidian-flora/issues/1).
+- The spider's background scan uses the window's own timer, so it also works in pop-out windows.
+
 ## 6.0.1
 
 ### Fixed
