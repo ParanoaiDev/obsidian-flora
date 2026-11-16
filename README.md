@@ -38,9 +38,39 @@ and signals run along them while you think.
 
 ## 🆕 New in 6.5: AI projects
 
+<div align="center">
+
+<img src="assets/demo/ai-sync.webp" alt="Animated demo: pressing Sync turns Claude Code and Codex histories into neurons, then the spider walks the projects, links them and a project card opens" width="100%" />
+
+<sub>Press <b>Sync</b>: your Claude Code and Codex projects grow into neurons, and the spider links them. Shown with made-up demo projects.</sub>
+
+</div>
+
 Open **AI projects**, pick **Claude Code**, **Codex** or both, and press **Sync**. Flora reads their histories on your computer, finds every project you built with them and grows it into a neuron: sessions and the AI's memory notes become smaller cells around it. Then the spider walks the projects and links them: the AI remembers them together, one session touched both, they share a name, a tool or the same days of work.
 
-Click a project to see its folder, sessions, days of work and what the AI remembers about it, open the folder or copy the command to continue the last session. **To notes** saves one note per project into a **Flora AI** folder, linked to each other. Desktop only; nothing leaves your computer (see [PRIVACY.md](PRIVACY.md)).
+<div align="center">
+
+<img src="assets/screenshots/ai-start.webp" alt="AI projects start screen: glass cards for Claude Code and Codex with the number of sessions found, history folders and a Sync button over living neurons" width="100%" />
+
+<sub>Pick the AIs. Flora shows what it found on this computer, and you can add a history folder from another machine.</sub>
+
+<br />
+<br />
+
+<img src="assets/screenshots/ai-graph.webp" alt="Projects as neurons with the spider's findings: shared memory, similar names and shared tools" width="100%" />
+
+<sub>Every project is a neuron, its sessions and memory notes grow around it. The spider explains each link it weaves.</sub>
+
+<br />
+<br />
+
+<img src="assets/screenshots/ai-card.webp" alt="Project card: folder, Claude Code and Codex sessions, days of work, what the AI remembers and the session list" width="100%" />
+
+<sub>Click a project: its folder, sessions, days of work and what the AI remembers about it.</sub>
+
+</div>
+
+Open the folder or copy the command to continue the last session. **To notes** saves one note per project into a **Flora AI** folder, linked to each other. Desktop only; nothing leaves your computer (see [PRIVACY.md](PRIVACY.md)).
 
 <br />
 
@@ -93,89 +123,6 @@ Press the **Spider** button in the Neurograph or in the graph view. A spider mad
 Eight backgrounds painted in small cells that are always gently moving. Each has a dark and a light version, and you choose how solid the glass over it is. The wallpaper also shows under the Neurograph, Flora 3D, canvases and the graph view.
 
 Everything else that changed is in the [changelog](CHANGELOG.md).
-
-<br />
-
-## ✨ What's inside
-
-<table>
-<tr>
-<td width="50%" valign="top">
-
-### 🪟 A new look for all of Obsidian
-Glass sidebars, capsule tabs and a floating status bar over a soft colored backdrop. Text sits on a solid card so it stays easy to read. Light and dark mode, five accent colors, and it works on top of any theme.
-
-</td>
-<td width="50%" valign="top">
-
-### 🧠 Neurograph
-A view of your whole vault as living tissue. Big notes grow crowns of dendrites, links carry pulses from cell to cell, canvases bloom into their own clusters. Hover a cell to light it up, click to open the note.
-
-**Timeline** replays how the vault grew: notes bloom in the order you created them and links grow between them. Play it, change the speed or drag to any date.
-
-</td>
-</tr>
-<tr>
-<td valign="top">
-
-### 🧬 Flora 3D
-The same vault in depth. Every note is a neuron with a bright core and its own dendrites, links are fine threads, and tens of thousands of particles gather around them into one glowing organism. Rotate it, fly into a group, pick a note to send light along its links, search by name, `#tag` or folder.
-
-The **shape catalog** has 17 shapes: organism, brain, nerves, spheres and galaxy follow your links, and a human, a heart, an eye, a neuron, DNA, a flower, a tree, a butterfly, a jellyfish, a spider, a knot and a ringed planet are built step by step. Or build your own from a word or a picture. Group by folders, tags or links and choose one of seven palettes.
-
-</td>
-<td valign="top">
-
-### 🕸️ Graph view, re-drawn
-The built-in graph and the local graph keep everything you rely on (filters, groups, colors, search, dragging) and are simply drawn as neurons instead of dots.
-
-</td>
-</tr>
-<tr>
-<td valign="top">
-
-### 🌌 Canvas
-A deep-space backdrop with soft nebulae, dark glass cards, and connections that become living axons. Pulses travel along the arrows and hand off to the next card in the chain.
-
-</td>
-<td valign="top">
-
-### 🌱 Start screen
-Every empty tab opens to a greeting, a search box, quick actions and your recent notes over living neurons, instead of "No file is open".
-
-</td>
-</tr>
-<tr>
-<td valign="top">
-
-### 📅 Today's journal
-A header for daily notes: the date, day-to-day navigation, dots for the month, a live band with the notes you touched that day, a ready-made template and auto-tasks. Every new line under **Tasks** turns into a checkbox by itself.
-
-</td>
-<td valign="top">
-
-### 🔎 Investigation board
-A case board for OSINT and research: entities (people, organizations, accounts, emails, phones, domains, IPs, places, vehicles, documents), links, a timeline and sources graded on the A–F / 1–6 scale, plus a live link map. Each case is a plain note.
-
-</td>
-</tr>
-<tr>
-<td valign="top">
-
-### 🕷️ The Spider
-A spider made of neurons walks the graph and looks for links that are missing: a note mentioned by name without a link, notes that share rare tags, notes with similar titles. It weaves a thread between the two notes and lists every finding. Nothing leaves your computer, and the spider never edits a note.
-
-</td>
-<td valign="top">
-
-### 🖼️ Live wallpapers
-Eight moving backgrounds: Bloom, Neurons, Clouds, Pond, Jellyfish, Fireflies, Moonlit and Aurora, each in a dark and a light version. They live under the glass of your notes and under every Flora view. Choose how solid the glass is: solid, balanced or wallpaper first.
-
-</td>
-</tr>
-</table>
-
-Every part can be switched on and off on its own in **Settings → Flora**.
 
 <br />
 

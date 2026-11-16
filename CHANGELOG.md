@@ -2,6 +2,14 @@
 
 All notable changes to Flora are listed here. Versions follow [semantic versioning](https://semver.org).
 
+## 6.5.1
+
+### Fixed
+- AI projects: rows in the project card and in the spider's list are aligned to the left again instead of drifting to the middle.
+- AI projects: opening a project card moves the view so the project is not hidden behind the card.
+- AI projects: a project is no longer tagged Minecraft just because its folder name contains "forge", and Python or web files no longer outweigh the engine or editor a project is really made in.
+- The camera now finishes a pan that does not change the zoom.
+
 ## 6.5.0
 
 ### Added

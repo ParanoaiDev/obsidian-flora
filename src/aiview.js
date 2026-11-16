@@ -306,6 +306,15 @@ class FloraAIView extends NeuralGraphView {
     if (t === "project") { kind.setText(node.ai.p.chat ? L("Чат с ИИ", "AI chat") : L("Проект", "Project")); this.cardProject(body, node.ai.p, node); }
     else if (t === "session") { kind.setText(L("Сессия ", "Session · ") + FloraAI.AIS[node.ai.S.ai].name); this.cardSession(body, node.ai.S); }
     else { kind.setText(L("Память ИИ", "AI memory")); this.cardMemory(body, node.ai.M); }
+    // карточка не должна закрывать саму клетку: сдвигаем вид, чтобы она оказалась справа от карточки
+    const R = this.renderer;
+    if (R && R.w > 700) {
+      const right = c.offsetLeft + c.offsetWidth, sx = (node.x - R.cam.x) * R.cam.z + R.w / 2, sy = (node.y - R.cam.y) * R.cam.z + R.h / 2;
+      if (sx < right + 60 || sx > R.w - 40 || sy < 60 || sy > R.h - 40) {
+        const cx = (right + R.w) / 2;
+        R.camTarget = { x: node.x - (cx - R.w / 2) / R.cam.z, y: sy < 60 || sy > R.h - 40 ? node.y : R.cam.y, z: R.cam.z };
+      }
+    }
   }
   fmtDate(t, year) { return t ? new Date(t).toLocaleDateString(FLORA_LANG === "ru" ? "ru-RU" : "en-US", year ? { day: "numeric", month: "short", year: "numeric" } : { day: "numeric", month: "short" }) : ""; }
   span(t0, t1) {

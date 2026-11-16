@@ -31,7 +31,7 @@
 .fsp-sum:empty { display: none; }
 .fsp-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; }
 .fsp-panel .fsp-row {
-  flex: none; display: flex; align-items: flex-start; gap: 9px; width: 100%; height: auto; padding: 7px 8px; border: none; border-radius: 10px; box-shadow: none;
+  flex: none; display: flex; align-items: flex-start; justify-content: flex-start; gap: 9px; width: 100%; height: auto; padding: 7px 8px; border: none; border-radius: 10px; box-shadow: none;
   background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; animation: fsp-in 0.35s ease both;
 }
 .fsp-panel .fsp-row:hover { background: rgba(255, 255, 255, 0.1); }

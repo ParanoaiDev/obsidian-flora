@@ -161,19 +161,21 @@ const FloraAI = (function () {
     ["godot", "Godot", /godot|\.gd\b|\.tscn\b|\.tres\b/i],
     ["roblox", "Roblox", /roblox|\.luau?\b|\.rbxl/i],
     ["unreal", "Unreal", /unreal|\.uproject\b|\.uasset\b/i],
-    ["minecraft", "Minecraft", /minecraft|forge|gradle|\.java\b/i],
+    ["minecraft", "Minecraft", /minecraft|neoforge|forge-?1\.|mods\.toml|fabric\.mod|gradle|\.java\b/i],
     ["web", "Web", /\.(html?|css|tsx?|jsx|vue|svelte)\b|\bnpm |\bvite\b|package\.json/i],
     ["python", "Python", /\.py\b|\bpython3?\b|\bpip\b/i],
     ["obsidian", "Obsidian", /obsidian|\.canvas\b/i],
     ["video", () => L("Видео", "Video"), /ffmpeg|\.mp4\b|\.mov\b|hyperframes|remotion|davinci/i],
     ["image", () => L("Картинки", "Images"), /imagegen|image_gen|generate_image|higgsfield|unsplash|\.psd\b/i],
-    ["mods", () => L("Моды", "Mods"), /\bmods?\b|modpack|7dtd|7 days|zomboid|workshop/i],
+    ["mods", () => L("Моды", "Mods"), /\bmods\b|modpack|7dtd|7 days|zomboid|steam ?workshop/i],
   ];
+  const GENERIC = new Set(["python", "web"]);
   const stackName = (id) => { const s = STACK.find((x) => x[0] === id); return s ? (typeof s[1] === "function" ? s[1]() : s[1]) : id; };
   function tagStack(text, into, w) {
     if (!text) return;
     const t = text.length > 4000 ? text.slice(0, 4000) : text;
-    for (const s of STACK) if (s[2].test(t)) into[s[0]] = (into[s[0]] || 0) + (w || 1);
+    // общие (Python, веб) весят меньше: они есть почти везде, а проект «про» движок или редактор
+    for (const s of STACK) if (s[2].test(t)) into[s[0]] = (into[s[0]] || 0) + (w || 1) * (GENERIC.has(s[0]) ? 0.4 : 1);
   }
 
   /* ---------- чтение jsonl построчно, без лишних копий ---------- */
@@ -494,7 +496,7 @@ const FloraAI = (function () {
 
   /* ---------- связи между проектами: что находит паук ---------- */
   const KINDS = {
-    memory: { color: "#f0a57c", name: () => L("Память ИИ", "AI memory") },
+    memory: { color: "#f0a57c", name: () => L("Общая память", "Shared memory") },
     session: { color: "#7fd6ff", name: () => L("Одна сессия", "Same session") },
     name: { color: "#f2c56b", name: () => L("Похожие названия", "Similar names") },
     time: { color: "#9fe6dc", name: () => L("В одни дни", "Same days") },

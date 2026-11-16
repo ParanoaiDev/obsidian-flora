@@ -688,7 +688,7 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     this.app.workspace.revealLeaf(leaf);
   }
   // кэш проектов с ИИ лежит рядом с настройками плагина, отдельным файлом
-  aiCachePath() { return (this.manifest.dir || ".obsidian/plugins/flora") + "/ai-cache.json"; }
+  aiCachePath() { return ((this.manifest && this.manifest.dir) || this.app.vault.configDir + "/plugins/flora") + "/ai-cache.json"; }
   async aiLoad() {
     try { const a = this.app.vault.adapter, p = this.aiCachePath(); if (await a.exists(p)) return JSON.parse(await a.read(p)); }
     catch (e) { console.warn("Flora AI:", e); }

@@ -1016,7 +1016,8 @@ const NG = (function () {
         this.cam.x += (this.camTarget.x - this.cam.x) * k;
         this.cam.y += (this.camTarget.y - this.cam.y) * k;
         this.cam.z += (this.camTarget.z - this.cam.z) * k;
-        if (Math.abs(this.camTarget.z - this.cam.z) < 0.001) this.camTarget = null;
+        // долетели: и масштаб, и положение (сдвиг без смены масштаба тоже должен доехать)
+        if (Math.abs(this.camTarget.z - this.cam.z) < 0.001 && Math.hypot(this.camTarget.x - this.cam.x, this.camTarget.y - this.cam.y) * this.cam.z < 0.5) this.camTarget = null;
       }
       if (!this.hold) this.fade = Math.min(1, this.fade + dt * 1.6);
       this.hoverMix += ((this.hover ? 1 : 0) - this.hoverMix) * Math.min(1, dt * 8);
