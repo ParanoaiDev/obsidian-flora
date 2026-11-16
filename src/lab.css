@@ -96,7 +96,7 @@
 .ng-lab .ng-lab-search-key { font-family: var(--lab-font); font-size: 12px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.75); border: none; box-shadow: none; }
 
 /* док с иконками-приложениями */
-.ng-lab-dock { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 14px; padding: 16px 12px 14px; border-radius: 34px; }
+.ng-lab-dock { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 6px; margin-top: 14px; padding: 16px 12px 14px; border-radius: 34px; }
 .ng-lab .ng-lab-app {
   display: flex; flex-direction: column; align-items: center; gap: 8px; height: auto; padding: 4px 0;
   background: transparent; border: none; box-shadow: none; cursor: pointer; color: #fff;

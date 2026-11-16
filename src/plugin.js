@@ -3,7 +3,7 @@
 /* Обёртка для Obsidian                                                */
 /* ------------------------------------------------------------------ */
 const VIEW_TYPE = "neural-graph";
-const DEFAULTS = { lang: "auto", cards: true, orphans: true, unresolved: false, activity: 1, skinGraph: true, skinLocal: true, skinHud: true, skinCanvas: true, skinDaily: true, autoTasks: true, fullSkin: true, labScreen: true, accent: "blue", wall: "none" };
+const DEFAULTS = { lang: "auto", cards: true, orphans: true, unresolved: false, activity: 1, skinGraph: true, skinLocal: true, skinHud: true, skinCanvas: true, skinDaily: true, autoTasks: true, fullSkin: true, labScreen: true, accent: "blue", wall: "none", aiChats: true, aiFolder: "Flora AI" };
 
 class NeuralGraphView extends obsidian.ItemView {
   constructor(leaf, plugin) {
@@ -449,6 +449,12 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     this.addRibbonIcon("atom", "Flora 3D", () => this.openFlora3D());
     this.addRibbonIcon("image", L("Живые обои Flora", "Flora live wallpaper"), () => new FloraWallModal(this.app, this).open());
     this.addCommand({ id: "open-3d", name: L("Открыть Flora 3D", "Open Flora 3D"), callback: () => this.openFlora3D() });
+    // проекты с ИИ: истории Claude Code и Codex с этого компьютера
+    this.registerView(AI_VIEW, (leaf) => new FloraAIView(leaf, this));
+    if (FloraAI.available()) {
+      this.addRibbonIcon("sparkles", L("Проекты с ИИ", "AI projects"), () => this.openAI());
+      this.addCommand({ id: "open-ai", name: L("Открыть проекты с ИИ", "Open AI projects"), callback: () => this.openAI() });
+    }
     this.addSettingTab(new NeuralGraphSettingTab(this.app, this));
     // полный дизайн интерфейса
     this.applySkin();
@@ -555,7 +561,7 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     });
     for (const [d, w] of [...this.walls]) if (!live.has(d)) { w.destroy(); this.walls.delete(d); }
     // свои разделы Flora: те же обои под Нейрографом и Flora 3D
-    for (const type of [VIEW_TYPE, FLORA3D_VIEW]) for (const leaf of this.app.workspace.getLeavesOfType(type)) if (leaf.view && typeof leaf.view.setWall === "function") leaf.view.setWall(this.settings.wall);
+    for (const type of [VIEW_TYPE, FLORA3D_VIEW, AI_VIEW]) for (const leaf of this.app.workspace.getLeavesOfType(type)) if (leaf.view && typeof leaf.view.setWall === "function") leaf.view.setWall(this.settings.wall);
     this.syncSceneWalls();
   }
 
@@ -672,6 +678,23 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     }
     this.app.workspace.revealLeaf(leaf);
   }
+
+  async openAI() {
+    let leaf = this.app.workspace.getLeavesOfType(AI_VIEW)[0];
+    if (!leaf) {
+      leaf = this.app.workspace.getLeaf("tab");
+      await leaf.setViewState({ type: AI_VIEW, active: true });
+    }
+    this.app.workspace.revealLeaf(leaf);
+  }
+  // кэш проектов с ИИ лежит рядом с настройками плагина, отдельным файлом
+  aiCachePath() { return (this.manifest.dir || ".obsidian/plugins/flora") + "/ai-cache.json"; }
+  async aiLoad() {
+    try { const a = this.app.vault.adapter, p = this.aiCachePath(); if (await a.exists(p)) return JSON.parse(await a.read(p)); }
+    catch (e) { console.warn("Flora AI:", e); }
+    return null;
+  }
+  async aiSave(cache) { await this.app.vault.adapter.write(this.aiCachePath(), JSON.stringify(cache)); }
 
   async saveSettings() { await this.saveData(this.settings); }
   async activate() {

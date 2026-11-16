@@ -227,9 +227,11 @@ const FloraSpider = (function () {
     /**
      * R — рендер графа (Нейрограф или скин обычного графа), host — элемент, в котором он живёт.
      * opts: { app, open(path, ev), icon(el, name), onClose() }
+     * Для других графов (проекты с ИИ): scan(onProgress, alive), kinds, name(id), steps, note, onDone(found).
      */
     constructor(R, host, opts) {
       this.R = R; this.host = host; this.opts = opts;
+      this.kinds = opts.kinds || KINDS;
       const doc = (this.doc = host.ownerDocument); this.win = doc.defaultView || window;
       this.cv = doc.createElement("canvas"); this.cv.className = "fsp-canvas"; host.appendChild(this.cv);
       this.g = this.cv.getContext("2d");
@@ -251,17 +253,17 @@ const FloraSpider = (function () {
       if (this.opts.icon) this.opts.icon(x, "x"); else x.textContent = "×";
       x.onclick = () => { this.destroy(); if (this.opts.onClose) this.opts.onClose(); };
       const bar = this._el("div", "fsp-bar", p); this.fill = this._el("div", "fsp-fill", bar);
-      this.steps = [L("Читаю заметки", "Reading notes"), L("Сверяю теги и названия", "Comparing tags and titles"), L("Плету связи", "Weaving links")].map((t) => { const r = this._el("div", "fsp-step", p); this._el("span", "fsp-dot", r); r._t = this._el("span", "", r, t); return r; });
+      this.steps = (this.opts.steps || [L("Читаю заметки", "Reading notes"), L("Сверяю теги и названия", "Comparing tags and titles"), L("Плету связи", "Weaving links")]).map((t) => { const r = this._el("div", "fsp-step", p); this._el("span", "fsp-dot", r); r._t = this._el("span", "", r, t); r._t0 = t; return r; });
       this.sum = this._el("div", "fsp-sum", p);
       this.list = this._el("div", "fsp-list", p);
-      this._el("div", "fsp-note", p, L("Паук ничего не меняет в заметках. Нажмите на находку, чтобы открыть заметку и поставить ссылку самому.", "The spider never changes your notes. Click a finding to open the note and add the link yourself."));
+      this._el("div", "fsp-note", p, this.opts.note || L("Паук ничего не меняет в заметках. Нажмите на находку, чтобы открыть заметку и поставить ссылку самому.", "The spider never changes your notes. Click a finding to open the note and add the link yourself."));
       this._stage(0);
     }
     _stage(n) { this.stage = n; this.steps.forEach((r, i) => { r.classList.toggle("is-done", i < n); r.classList.toggle("is-on", i === n); }); }
-    _name(path) { const i = path.lastIndexOf("/"); return path.slice(i + 1).replace(/\.md$/i, ""); }
+    _name(path) { if (this.opts.name) return this.opts.name(path); const i = path.lastIndexOf("/"); return path.slice(i + 1).replace(/\.md$/i, ""); }
     _row(f) {
       const row = this._el("button", "fsp-row", this.list); row.type = "button";
-      const dot = this._el("span", "fsp-kind", row); dot.style.setProperty("--fsp-c", KINDS[f.kind].color);
+      const dot = this._el("span", "fsp-kind", row); dot.style.setProperty("--fsp-c", this.kinds[f.kind].color);
       const tx = this._el("span", "fsp-tx", row);
       const top = this._el("span", "fsp-pair", tx); this._el("b", "", top, this._name(f.a)); this._el("i", "", top, " → "); this._el("b", "", top, this._name(f.b));
       this._el("span", "fsp-why", tx, f.snippet || f.why);
@@ -274,13 +276,14 @@ const FloraSpider = (function () {
       const n = this.found.length, c = {};
       for (const f of this.found) c[f.kind] = (c[f.kind] || 0) + 1;
       this.sum.textContent = n ? L("Нашёл ", "Found ") + floraNum(n) + " " + plural(n, ["возможную связь", "возможные связи", "возможных связей"], ["possible link", "possible links"]) + ": " +
-        Object.keys(c).map((k) => KINDS[k].name().toLowerCase() + " " + c[k]).join(", ") : L("Недостающих связей не нашёл: всё, что упомянуто, уже связано.", "No missing links found: everything that is mentioned is already linked.");
+        Object.keys(c).map((k) => this.kinds[k].name().toLowerCase() + " " + c[k]).join(", ") : (this.opts.empty || L("Недостающих связей не нашёл: всё, что упомянуто, уже связано.", "No missing links found: everything that is mentioned is already linked."));
     }
     async _run() {
       const t0 = this.win.performance.now();
       let res = null;
       try {
-        res = await scan(this.opts.app, (d, n, st) => { if (!this.alive) return; const p = n ? d / n : 1; this.readP = st ? 1 : p; this.steps[0]._t.textContent = L("Читаю заметки", "Reading notes") + "  " + floraNum(d) + " / " + floraNum(n); if (st >= 1 && this.stage < 1) this._stage(1); }, () => this.alive);
+        const prog = (d, n, st) => { if (!this.alive) return; const p = n ? d / n : 1; this.readP = st ? 1 : p; this.steps[0]._t.textContent = this.steps[0]._t0 + "  " + floraNum(d) + " / " + floraNum(n); if (st >= 1 && this.stage < 1) this._stage(1); };
+        res = this.opts.scan ? await this.opts.scan(prog, () => this.alive) : await scan(this.opts.app, prog, () => this.alive);
       } catch (e) { console.error("Flora spider:", e); res = []; }
       if (!this.alive || !res) return;
       // чтение быстрое, а пауку нужно время пройтись: не показываем итог раньше, чем он обойдёт несколько узлов
@@ -301,6 +304,7 @@ const FloraSpider = (function () {
       this._stage(3); this.pct.textContent = "100%"; this.fill.style.setProperty("--p", "1");
       this._summary();
       this.panel.classList.add("is-done");
+      if (this.opts.onDone) try { this.opts.onDone(this.found); } catch (e) { console.error("Flora spider:", e); }
     }
     _xy(id, o) {
       const n = this.R.byId.get(id), R = this.R;
@@ -346,7 +350,7 @@ const FloraSpider = (function () {
       for (const t of this.threads) {
         if (!this._xy(t.f.a, a) || !this._xy(t.f.b, b)) continue;
         t.p = Math.min(1, t.p + dt / 0.5);
-        const hot = this.focus === t.f, col = KINDS[t.f.kind].color;
+        const hot = this.focus === t.f, col = this.kinds[t.f.kind].color;
         const al = hot ? 1 : this.focus ? 0.18 : 0.6, ex = a[0] + (b[0] - a[0]) * t.p, ey = a[1] + (b[1] - a[1]) * t.p;
         g.strokeStyle = col;
         g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(ex, ey);

@@ -8,6 +8,7 @@ const labApps = floraLazy(() => [
   { label: L("Нейрограф", "Neurograph"), glyph: "✺", icon: "brain", from: "#e3a6ff", to: "#9b3dff", cmd: "flora:open" },
   { label: L("Расследование", "Investigation"), glyph: "⌖", icon: "fingerprint", from: "#ff9a8b", to: "#ff2d55", cmd: "flora:open-case" },
   { label: L("Холст", "Canvas"), glyph: "▦", icon: "layout-dashboard", from: "#8ef0a8", to: "#16b45a", cmd: "canvas:new-file" },
+  { label: L("ИИ-проекты", "AI projects"), glyph: "✦", icon: "sparkles", from: "#ffc29e", to: "#d9663a", cmd: "flora:open-ai", desktop: true },
 ]);
 const labFileKinds = floraLazy(() => {
   const img = [L("Картинка", "Image"), "image", "#ffd36b", "#ff9500"];
@@ -93,6 +94,7 @@ class LabScreen {
 
     const dock = mk("div", "ng-lab-dock ng-glass", inner);
     for (const a of labApps()) {
+      if (a.desktop && !FloraAI.available()) continue;
       const b = mk("button", "ng-lab-app", dock);
       const ic = mk("span", "ng-lab-app-icon", b);
       ic.style.setProperty("--from", a.from); ic.style.setProperty("--to", a.to);
