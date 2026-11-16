@@ -36,6 +36,14 @@ and signals run along them while you think.
 
 <br />
 
+## 🆕 New in 6.5: AI projects
+
+Open **AI projects**, pick **Claude Code**, **Codex** or both, and press **Sync**. Flora reads their histories on your computer, finds every project you built with them and grows it into a neuron: sessions and the AI's memory notes become smaller cells around it. Then the spider walks the projects and links them: the AI remembers them together, one session touched both, they share a name, a tool or the same days of work.
+
+Click a project to see its folder, sessions, days of work and what the AI remembers about it, open the folder or copy the command to continue the last session. **To notes** saves one note per project into a **Flora AI** folder, linked to each other. Desktop only; nothing leaves your computer (see [PRIVACY.md](PRIVACY.md)).
+
+<br />
+
 ## 🆕 New in 6.0
 
 <div align="center">
@@ -346,6 +354,7 @@ node build.js "/path/to/vault/.obsidian/plugins/flora"
 | --- | --- |
 | **Flora: Open Neurograph** | Opens your vault as living tissue in a new tab |
 | **Flora: Open Flora 3D** | Opens your vault as a 3D organism of particles in a new tab |
+| **Flora: Open AI projects** | Opens the projects you built with Claude Code and Codex as neurons (desktop) |
 | **Flora: Choose wallpaper** | Opens the live wallpaper picker |
 | **Flora: Open today's journal** | Opens or creates today's daily note with the journal header |
 | **Flora: Open the investigation board** | Opens the case board with your cases |
@@ -389,6 +398,7 @@ The Neurograph, Flora 3D, live wallpapers and the investigation board also have 
 
 - Obsidian has no official API for re-drawing the graph view and canvases, so those two skins hook into the app's internals. If a future Obsidian update changes them, the skin simply stops attaching and you get the original graph or canvas back. Nothing breaks and no data is touched.
 - Cases live as ordinary notes in an **Investigations** folder. The board edits a small data block inside the note and rewrites a readable summary under it, so your cases stay searchable and linkable.
+- **AI projects** is the only part of Flora that reads files outside your vault: the Claude Code and Codex histories on your computer, and only after you press **Sync**. It keeps a small cache of names, folders and dates in its plugin folder.
 - Flora only styles and organizes what you write yourself. The investigation board does not search, scrape or contact anything.
 
 <br />

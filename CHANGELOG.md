@@ -2,6 +2,20 @@
 
 All notable changes to Flora are listed here. Versions follow [semantic versioning](https://semver.org).
 
+## 6.5.0
+
+### Added
+- **AI projects**, a new view with the **Open AI projects** command and an **AI projects** button on the start screen (desktop only). Pick Claude Code, Codex or both and press **Sync**: Flora reads their histories on this computer, finds the projects you worked on with them and grows each project into a neuron, with its sessions and the AI's memory notes as smaller cells around it.
+- A project is the folder where the AI actually changed files, not just the folder it was started from, so work started from the home folder still lands in the right project. Chats without a project folder show up as small neurons of their own and can be hidden with **Chats**.
+- After the first sync the **spider** walks the projects and links them: the AI remembers them together, they were worked on in one session, they have similar names, they were worked on the same days, or they share a rarer tool. The links stay in the graph.
+- Click a project for its card: the folder, which AIs and tools were used, sessions, days of work, what the AI remembers about it and its links. **Open folder**, **Continue** (copies the command to resume the last session in a terminal) and **Note**.
+- **To notes** saves one note per project into a **Flora AI** folder, with wikilinks between linked projects. Running it again only rewrites Flora's block inside each note.
+- Add more history folders on the start screen, for example a `.claude` folder copied from another computer.
+- The **Timeline** shows the projects appearing in the order you started them.
+
+### Privacy
+- AI projects reads `~/.claude` and `~/.codex` (and folders you add) on this computer. Nothing is sent anywhere. Flora keeps only project names, folders, dates, session titles and counts in `ai-cache.json` in its plugin folder; API keys and long tokens in chat titles are hidden.
+
 ## 6.0.3
 
 ### Changed

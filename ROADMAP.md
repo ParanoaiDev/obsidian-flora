@@ -11,6 +11,8 @@ Ideas for what comes next. Nothing here has a date, and the order can change.
 
 ## Later
 
+- [ ] AI projects: claude.ai and ChatGPT export archives
+
 - [ ] Mobile: lighter render settings tuned for phones and tablets
 - [ ] More languages for the interface
 - [ ] Investigation board: import entities from a canvas, export a case as a report note
@@ -18,6 +20,7 @@ Ideas for what comes next. Nothing here has a date, and the order can change.
 
 ## Done
 
+- [x] AI projects: Claude Code and Codex histories as a graph of your projects, linked by the spider (6.5.0)
 - [x] Shape catalog with 17 shapes, the spider that finds missing links, live wallpapers (6.0.0)
 - [x] Flora 3D: the vault as a 3D organism of particles (5.5.0)
 - [x] Timeline for the Neurograph, Flora loading screen, a faster engine without shaking neurons (5.4.0)
