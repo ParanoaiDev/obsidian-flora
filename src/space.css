@@ -1,0 +1,252 @@
+/* =========================================================
+   Space Neurons — космос из заметок
+   Звёзды, дыру и свечение рисует видеокарта; здесь — стекло вокруг.
+   ========================================================= */
+.workspace-leaf-content[data-type="flora-space"] .view-content.fsn-view {
+  padding: 0; overflow: hidden; position: relative; background: #000;
+}
+.fsn-stage { position: absolute; inset: 0; opacity: 0; transition: opacity 0.9s ease; }
+.fsn-stage.is-ready { opacity: 1; }
+.fsn {
+  position: absolute; inset: 0; overflow: hidden; outline: none;
+  background: #000; color: #fff;
+  font-family: var(--ng-font, "Segoe UI", system-ui, sans-serif); font-size: 13px;
+  -webkit-user-select: none; user-select: none;
+}
+.fsn [hidden] { display: none; }
+.fsn-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+.fsn-canvas:active { cursor: grabbing; }
+.fsn-canvas.is-hot { cursor: pointer; }
+.fsn button { font-family: inherit; }
+
+/* ---------- подписи в пространстве ---------- */
+.fsn-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.fsn .fsn-label {
+  position: absolute; left: 0; top: 0; height: auto; padding: 2px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  transform: translate(var(--x), var(--y)) translate(-50%, -50%);
+  opacity: var(--o, 1); pointer-events: auto; cursor: pointer;
+  border: none; border-radius: 999px; background: none; box-shadow: none;
+  color: #fff; white-space: nowrap; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+  transition: opacity 0.25s ease;
+}
+.fsn-label-t { font-size: 12px; font-weight: 600; letter-spacing: 0.01em; color: rgba(255, 255, 255, 0.92); max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.fsn-label-s { font-size: 10.5px; color: rgba(235, 235, 245, 0.66); }
+.fsn-label-s:empty { display: none; }
+.fsn .fsn-label[hidden] { display: none; }
+.fsn .fsn-label:hover { background: none; }
+.fsn .fsn-label:hover .fsn-label-t { color: #fff; }
+.fsn .fsn-label.is-center {
+  padding: 3px 12px; background: rgba(22, 22, 26, 0.62); text-shadow: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+.fsn-label.is-center .fsn-label-t { font-size: 11.5px; font-weight: 500; color: rgba(235, 235, 245, 0.85); }
+.fsn .fsn-label.is-sel { padding: 3px 10px; background: rgba(255, 255, 255, 0.94); text-shadow: none; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5); }
+.fsn-label.is-sel .fsn-label-t { color: #0b0d12; }
+.fsn-label.is-nb .fsn-label-t { font-size: 11px; font-weight: 500; color: rgba(235, 235, 245, 0.78); }
+
+/* ---------- подсказка под курсором ---------- */
+.fsn-tip {
+  position: absolute; left: 0; top: 0; z-index: 4; max-width: 240px; padding: 7px 10px;
+  transform: translate(var(--x, 0), var(--y, 0));
+  border-radius: 10px; pointer-events: none; opacity: 0; transition: opacity 0.12s ease;
+  background: rgba(14, 14, 18, 0.92); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.fsn-tip.is-on { opacity: 1; }
+.fsn-tip-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fsn-tip-meta { margin-top: 1px; font-size: 11.5px; color: rgba(235, 235, 245, 0.6); }
+
+/* ---------- слева сверху: имя, приветствие, карточка ---------- */
+.fsn-head {
+  position: absolute; left: 20px; top: 16px; z-index: 3; width: min(330px, calc(100% - 40px));
+  display: flex; flex-direction: column; pointer-events: none;
+}
+.fsn-brand { font-size: 14px; font-weight: 600; letter-spacing: 0.01em; }
+.fsn-meta { margin-top: 2px; font-size: 11px; color: rgba(235, 235, 245, 0.42); font-variant-numeric: tabular-nums; }
+.fsn-hello { margin-top: 26px; text-shadow: 0 1px 12px rgba(0, 0, 0, 0.9); }
+.fsn-hello-t { font-size: 27px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.15; }
+.fsn-hello-s { margin-top: 6px; font-size: 12px; color: rgba(235, 235, 245, 0.5); }
+.fsn-hello-p { margin-top: 14px; font-size: 14px; line-height: 1.45; color: rgba(235, 235, 245, 0.82); }
+.fsn-card {
+  position: relative; margin-top: 18px; padding: 16px 16px 14px; border-radius: 18px;
+  display: flex; flex-direction: column; gap: 6px; pointer-events: auto;
+  max-height: calc(100vh - 260px); overflow: auto; background-color: rgba(14, 14, 18, 0.55);
+}
+.fsn .fsn-card-x {
+  position: absolute; right: 10px; top: 10px; width: 26px; height: 26px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 50%; background: rgba(255, 255, 255, 0.08); box-shadow: none; color: rgba(235, 235, 245, 0.7); cursor: pointer;
+}
+.fsn .fsn-card-x:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.fsn-card-x svg { width: 14px; height: 14px; }
+.fsn-card-kicker { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(235, 235, 245, 0.5); padding-right: 30px; }
+.fsn-card-title { font-size: 18px; font-weight: 600; line-height: 1.25; padding-right: 26px; overflow-wrap: anywhere; }
+.fsn-card-path { font-size: 11.5px; color: rgba(235, 235, 245, 0.5); overflow-wrap: anywhere; }
+.fsn-card-meta { font-size: 12px; color: rgba(235, 235, 245, 0.72); }
+.fsn-card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.fsn-chip { padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); font-size: 11px; color: rgba(235, 235, 245, 0.8); }
+.fsn-card-h { margin-top: 6px; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(235, 235, 245, 0.45); }
+.fsn-card-list { display: flex; flex-direction: column; }
+.fsn .fsn-card-link {
+  height: auto; padding: 5px 8px; margin: 0 -8px; border: none; border-radius: 8px; background: none; box-shadow: none;
+  display: flex; justify-content: flex-start; text-align: left;
+  color: rgba(235, 235, 245, 0.88); font-size: 12.5px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fsn .fsn-card-link:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.fsn-card-actions { display: flex; gap: 6px; margin-top: 8px; }
+.fsn .fsn-card-btn {
+  height: 30px; padding: 0 12px; border: none; border-radius: 999px; box-shadow: none; cursor: pointer;
+  background: rgba(255, 255, 255, 0.1); color: #fff; font-size: 12.5px; font-weight: 600;
+}
+.fsn .fsn-card-btn:hover { background: rgba(255, 255, 255, 0.18); }
+.fsn .fsn-card-btn.is-main { background: #fff; color: #0b0d12; }
+.fsn .fsn-card-btn.is-main:hover { background: rgba(255, 255, 255, 0.86); }
+
+/* ---------- кнопки ---------- */
+.fsn .fsn-themes { left: 50%; right: auto; transform: translateX(-50%); }
+.fsn .fsn-ctl { top: 12px; right: 12px; }
+.fsn .fsn-dock { top: auto; bottom: 14px; left: 50%; right: auto; transform: translateX(-50%); }
+.fsn .ng-ctl .ng-ctl-btn.is-on { background: rgba(255, 255, 255, 0.92); color: #0b0d12; }
+.fsn-count { position: absolute; left: 20px; bottom: 18px; z-index: 2; font-size: 11.5px; color: rgba(235, 235, 245, 0.45); pointer-events: none; font-variant-numeric: tabular-nums; }
+.fsn-hint { position: absolute; right: 20px; bottom: 18px; z-index: 2; max-width: 34%; text-align: right; font-size: 11px; color: rgba(235, 235, 245, 0.3); pointer-events: none; }
+
+/* ---------- панель «Настроить» ---------- */
+.fsn-panel {
+  position: absolute; top: 58px; right: 12px; z-index: 5; width: 316px; max-height: calc(100% - 130px); overflow: auto;
+  padding: 14px 16px 16px; border-radius: 18px; display: flex; flex-direction: column; gap: 8px;
+  background-color: rgba(14, 14, 18, 0.6);
+}
+.fsn-panel-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.fsn-row { display: flex; align-items: center; justify-content: flex-start; gap: 10px; min-height: 24px; }
+.fsn-row-name { flex: 0 0 110px; font-size: 12.5px; color: rgba(235, 235, 245, 0.8); }
+.fsn .fsn-range { flex: 1; min-width: 0; margin: 0; accent-color: #fff; }
+.fsn-row-val { flex: 0 0 34px; text-align: right; font-size: 11px; color: rgba(235, 235, 245, 0.45); font-variant-numeric: tabular-nums; }
+.fsn-sw { display: flex; gap: 6px; flex-wrap: wrap; }
+.fsn .fsn-sw-btn {
+  width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; cursor: pointer;
+  background: var(--fsn-sw, #fff); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+.fsn .fsn-sw-btn.is-auto { background: conic-gradient(#ffd9a0, #ffffff, #9fdcff, #b49bff, #ffd9a0); }
+.fsn .fsn-sw-btn.is-on { box-shadow: 0 0 0 2px #000, 0 0 0 3.5px #fff; }
+.fsn .fsn-tg, .fsn .fsn-seg-btn {
+  height: 22px; min-width: 44px; padding: 0 10px; border: none; border-radius: 999px; box-shadow: none; cursor: pointer;
+  background: rgba(255, 255, 255, 0.1); color: rgba(235, 235, 245, 0.7); font-size: 11.5px; font-weight: 600;
+}
+.fsn .fsn-tg:hover, .fsn .fsn-seg-btn:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.fsn .fsn-tg.is-on, .fsn .fsn-seg-btn.is-on { background: #fff; color: #0b0d12; }
+.fsn-seg { display: flex; gap: 4px; }
+.fsn-seg.is-wrap { flex-wrap: wrap; flex: 1; min-width: 0; }
+.fsn .fsn-reset {
+  margin-top: 6px; height: 30px; border: none; border-radius: 999px; box-shadow: none; cursor: pointer;
+  background: rgba(255, 255, 255, 0.1); color: #fff; font-size: 12.5px; font-weight: 600;
+}
+.fsn .fsn-reset:hover { background: rgba(255, 255, 255, 0.18); }
+
+/* ---------- обзор ---------- */
+.fsn-over {
+  position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center;
+  padding: 58px 24px 70px; background: rgba(0, 0, 0, 0.3);
+}
+.fsn-ov {
+  width: min(900px, 100%); max-height: 100%; overflow: auto; padding: 20px 22px 22px; border-radius: 22px;
+  display: flex; flex-direction: column; gap: 14px; background-color: rgba(16, 16, 20, 0.74);
+}
+.fsn-ov > * { flex-shrink: 0; }
+.fsn-ov-head { display: flex; align-items: center; gap: 10px; }
+.fsn-ov-title { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.fsn-ov-date { padding: 2px 9px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); font-size: 11px; color: rgba(235, 235, 245, 0.7); }
+.fsn .fsn-ov-x {
+  margin-left: auto; width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 50%; background: rgba(255, 255, 255, 0.08); box-shadow: none; color: rgba(235, 235, 245, 0.7); cursor: pointer;
+}
+.fsn .fsn-ov-x:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.fsn-ov-x svg { width: 15px; height: 15px; }
+.fsn-ov-search {
+  display: flex; align-items: center; gap: 9px; height: 42px; padding: 0 14px; border-radius: 12px;
+  background: rgba(0, 0, 0, 0.28); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+.fsn-ov-search-ico { display: inline-flex; color: rgba(235, 235, 245, 0.5); }
+.fsn-ov-search-ico svg { width: 15px; height: 15px; }
+.fsn .fsn-ov-q {
+  flex: 1; min-width: 0; height: 100%; padding: 0; border: none; box-shadow: none; outline: none; background: transparent;
+  color: #fff; font-family: inherit; font-size: 13.5px; -webkit-user-select: text; user-select: text;
+}
+.fsn .fsn-ov-q:hover, .fsn .fsn-ov-q:focus, .fsn .fsn-ov-q:focus-visible { border: none; box-shadow: none; outline: none; background: transparent; }
+.fsn-ov-search:focus-within { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32); }
+.fsn .fsn-ov-q::placeholder { color: rgba(235, 235, 245, 0.42); }
+.fsn-ov-res { display: flex; flex-direction: column; margin-top: -6px; padding: 4px; border-radius: 12px; background: rgba(0, 0, 0, 0.3); }
+.fsn .fsn-ov-hit {
+  height: auto; padding: 7px 10px; border: none; border-radius: 8px; background: none; box-shadow: none; cursor: pointer;
+  display: flex; justify-content: flex-start; align-items: baseline; gap: 10px; text-align: left; color: #fff;
+}
+.fsn .fsn-ov-hit:hover { background: rgba(255, 255, 255, 0.08); }
+.fsn-ov-hit-t { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fsn-ov-hit-s { margin-left: auto; font-size: 11px; color: rgba(235, 235, 245, 0.45); white-space: nowrap; }
+.fsn-ov-none { padding: 8px 10px; font-size: 12.5px; color: rgba(235, 235, 245, 0.5); }
+
+.fsn-ov-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.fsn-tile {
+  --c: 255, 138, 61;
+  padding: 12px 14px 10px; border-radius: 14px; background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(var(--c), 0.55);
+}
+.fsn-tile.is-b { --c: 61, 220, 132; }
+.fsn-tile.is-c { --c: 61, 139, 255; }
+.fsn-tile.is-d { --c: 163, 93, 255; }
+.fsn-tile-top { display: flex; align-items: flex-start; justify-content: flex-start; gap: 8px; }
+.fsn-tile-num { font-size: 25px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.fsn-tile-badge { margin-left: auto; margin-top: 3px; padding: 2px 7px; border-radius: 6px; background: rgba(var(--c), 0.16); color: rgb(var(--c)); font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+.fsn-tile-name { margin-top: 2px; font-size: 12.5px; color: rgba(235, 235, 245, 0.85); }
+.fsn-tile-sub { font-size: 11px; color: rgba(235, 235, 245, 0.42); }
+.fsn-spark { display: flex; align-items: flex-end; gap: 3px; height: 26px; margin-top: 10px; }
+.fsn-spark-bar { flex: 1; height: var(--h); border-radius: 2px; background: rgba(var(--c), 0.4); }
+.fsn-spark-bar.is-last { background: rgb(var(--c)); }
+
+.fsn-ov-mid { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 10px; }
+.fsn-ov-low { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fsn-ov-card { min-width: 0; padding: 12px 14px; border-radius: 14px; background: rgba(255, 255, 255, 0.035); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07); }
+.fsn-ov-h { font-size: 13px; font-weight: 600; }
+.fsn-ov-h::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #a35dff; vertical-align: 1px; }
+.is-groups .fsn-ov-h::before { background: #3ddc84; }
+.is-hubs .fsn-ov-h::before { background: #3d8bff; }
+.fsn-ov-sub { margin-top: 1px; margin-bottom: 10px; font-size: 11px; color: rgba(235, 235, 245, 0.42); }
+.fsn-ov-k { margin-bottom: 6px; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(235, 235, 245, 0.45); }
+.fsn-plot { display: flex; gap: 6px; height: 150px; }
+.fsn-plot-y { display: flex; flex-direction: column; justify-content: space-between; font-size: 10px; color: rgba(235, 235, 245, 0.38); font-variant-numeric: tabular-nums; }
+.fsn-plot-bars { flex: 1; display: flex; align-items: flex-end; gap: 2px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.fsn-plot-bar { flex: 1; min-height: 2px; height: var(--h); border-radius: 2px 2px 0 0; background: linear-gradient(180deg, #b27bff, #7a3dff); }
+.fsn-plot-x { display: flex; justify-content: space-between; margin-top: 4px; padding-left: 20px; font-size: 10px; color: rgba(235, 235, 245, 0.38); }
+.fsn .fsn-bar-row {
+  width: 100%; height: auto; padding: 4px 0 6px; border: none; border-radius: 6px; background: none; box-shadow: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: stretch; gap: 4px; text-align: left; color: #fff;
+}
+.fsn .fsn-bar-row:hover { background: none; }
+.fsn .fsn-bar-row:hover .fsn-bar-name { color: #fff; }
+.fsn-bar-top { display: flex; justify-content: flex-start; gap: 8px; font-size: 12px; }
+.fsn-bar-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(235, 235, 245, 0.85); }
+.fsn-bar-val { color: rgba(235, 235, 245, 0.55); font-variant-numeric: tabular-nums; }
+.fsn-bar-track { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
+.fsn-bar-fill { width: var(--w); height: 100%; border-radius: 2px; background: #3ddc84; }
+.is-hubs .fsn-bar-fill { background: #3d8bff; }
+.fsn .fsn-rec {
+  width: 100%; height: auto; padding: 6px 8px; margin: 0 -8px; border: none; border-radius: 8px; background: none; box-shadow: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; color: #fff;
+}
+.fsn .fsn-rec:hover { background: rgba(255, 255, 255, 0.06); }
+.fsn-rec-t { max-width: 100%; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fsn-rec-s { max-width: 100%; font-size: 11px; color: rgba(235, 235, 245, 0.42); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.fsn-fail { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(380px, calc(100% - 40px)); padding: 18px 20px; border-radius: 18px; }
+.fsn-fail-title { font-size: 15px; font-weight: 600; }
+.fsn-fail-text { margin-top: 6px; font-size: 12.5px; line-height: 1.45; color: rgba(235, 235, 245, 0.7); }
+
+@media (max-width: 900px) {
+  .fsn-hint { display: none; }
+  .fsn-ov-mid, .fsn-ov-low { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .fsn .fsn-themes { top: auto; bottom: 62px; }
+  .fsn-hello { display: none; }
+  .fsn-count { display: none; }
+}

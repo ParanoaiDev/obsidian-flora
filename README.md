@@ -36,6 +36,56 @@ and signals run along them while you think.
 
 <br />
 
+## 🆕 New in 7.0: Space Neurons and Neuron
+
+<div align="center">
+
+<img src="assets/demo/space-neuron.webp" alt="Animated demo: the vault as a galaxy around a black hole and a white star, then the whole vault grows into one living nerve cell" width="100%" />
+
+<sub>Recorded in Flora with a made-up demo vault of about a thousand notes.</sub>
+
+</div>
+
+### Space Neurons
+
+Your vault becomes space. Every note is a star-like neuron, every link a thread of light, and folders gather into constellations around a **black hole** whose light really bends around it, or around a bright **white star** with orbits and comets. Turn it any way, click a constellation to fly there, open **Overview** for your writing at a glance, and tune everything in **Customize**. AI projects can join the same sky.
+
+<div align="center">
+
+<img src="assets/screenshots/space-hole.webp" alt="Space Neurons: notes as a glowing galaxy around a black hole with an accretion disk and comets" width="100%" />
+
+<sub>The black hole scene: disk, photon ring, comets and your folders as constellations.</sub>
+
+<br />
+<br />
+
+<img src="assets/screenshots/space-star.webp" alt="Space Neurons: notes around a white star with thin orbits and a starry sky" width="100%" />
+
+<sub>The white star scene.</sub>
+
+</div>
+
+### Neuron
+
+Your whole vault grows into one living nerve cell inside brain tissue. Folders are dendrites, notes are spines on them, open tasks glow on the axon terminals, and signals run from your notes through the cell to your tasks. Four lenses explain your notes in plain words: **Neuron**, **Synapse** (tasks cross over when you tick them off, and the note gets its check), **Time** (when you write and which folders went quiet) and **Links** (how your folders connect). The **Today** panel lists what is due and writes quick thoughts into today's journal.
+
+<div align="center">
+
+<img src="assets/screenshots/neuron.webp" alt="Neuron: the vault as one nerve cell with coloured dendrites, labelled folders and the Today panel with tasks" width="100%" />
+
+<sub>Every folder is a branch, every note a spine. The Today panel is on the right.</sub>
+
+<br />
+<br />
+
+<img src="assets/screenshots/neuron-synapse.webp" alt="Synapse lens: open tasks on the left, done tasks on the right, coloured by urgency" width="100%" />
+
+<sub>Synapse: what is left and what is done, coloured by urgency.</sub>
+
+</div>
+
+<br />
+
 ## 🆕 New in 6.5: AI projects
 
 <div align="center">
@@ -302,6 +352,8 @@ node build.js "/path/to/vault/.obsidian/plugins/flora"
 | **Flora: Open Neurograph** | Opens your vault as living tissue in a new tab |
 | **Flora: Open Flora 3D** | Opens your vault as a 3D organism of particles in a new tab |
 | **Flora: Open AI projects** | Opens the projects you built with Claude Code and Codex as neurons (desktop) |
+| **Flora: Open Space Neurons** | Opens your vault as space around a black hole or a white star |
+| **Flora: Open Neuron** | Opens your vault as one living nerve cell, with tasks, time and links |
 | **Flora: Choose wallpaper** | Opens the live wallpaper picker |
 | **Flora: Open today's journal** | Opens or creates today's daily note with the journal header |
 | **Flora: Open the investigation board** | Opens the case board with your cases |
@@ -346,6 +398,7 @@ The Neurograph, Flora 3D, live wallpapers and the investigation board also have 
 - Obsidian has no official API for re-drawing the graph view and canvases, so those two skins hook into the app's internals. If a future Obsidian update changes them, the skin simply stops attaching and you get the original graph or canvas back. Nothing breaks and no data is touched.
 - Cases live as ordinary notes in an **Investigations** folder. The board edits a small data block inside the note and rewrites a readable summary under it, so your cases stay searchable and linkable.
 - **AI projects** is the only part of Flora that reads files outside your vault: the Claude Code and Codex histories on your computer, and only after you press **Sync**. It keeps a small cache of names, folders and dates in its plugin folder.
+- **Neuron** changes your notes only when you ask it to: **Done** turns `- [ ]` into `- [x]` on that one line (and **Undo** puts it back), and a quick thought is added as a new line to today's journal.
 - Flora only styles and organizes what you write yourself. The investigation board does not search, scrape or contact anything.
 
 <br />

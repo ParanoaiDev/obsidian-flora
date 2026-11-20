@@ -8,6 +8,8 @@ const labApps = floraLazy(() => [
   { label: L("Нейрограф", "Neurograph"), glyph: "✺", icon: "brain", from: "#e3a6ff", to: "#9b3dff", cmd: "flora:open" },
   { label: L("Расследование", "Investigation"), glyph: "⌖", icon: "fingerprint", from: "#ff9a8b", to: "#ff2d55", cmd: "flora:open-case" },
   { label: L("Холст", "Canvas"), glyph: "▦", icon: "layout-dashboard", from: "#8ef0a8", to: "#16b45a", cmd: "canvas:new-file" },
+  { label: L("Нейрон", "Neuron"), glyph: "⟡", icon: "brain-circuit", from: "#a8f5d6", to: "#1f9e7a", cmd: "flora:open-neuron" },
+  { label: "Space Neurons", glyph: "✧", icon: "orbit", from: "#c7d2ff", to: "#4b3bd6", cmd: "flora:open-space" },
   { label: L("ИИ-проекты", "AI projects"), glyph: "✦", icon: "sparkles", from: "#ffc29e", to: "#d9663a", cmd: "flora:open-ai", desktop: true },
 ]);
 const labFileKinds = floraLazy(() => {

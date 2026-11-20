@@ -142,6 +142,11 @@ class DailyTools {
       .replace(/{{\s*title\s*}}/g, this.format(date, o.format));
   }
   async openDay(date, leaf) {
+    const f = await this.ensureDay(date);
+    await (leaf || this.app.workspace.getLeaf(false)).openFile(f);
+  }
+  // заметка дня: найти или создать (со всеми папками на пути)
+  async ensureDay(date) {
     let f = this.fileFor(date);
     if (!f) {
       const path = this.pathFor(date);
@@ -156,7 +161,7 @@ class DailyTools {
       }
       f = await this.app.vault.create(path, await this.templateText(date));
     }
-    await (leaf || this.app.workspace.getLeaf(false)).openFile(f);
+    return f;
   }
   /** соседняя существующая ежедневная заметка (dir = -1 / +1) */
   neighbour(date, dir) {

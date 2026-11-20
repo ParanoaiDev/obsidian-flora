@@ -20,6 +20,7 @@ Ideas for what comes next. Nothing here has a date, and the order can change.
 
 ## Done
 
+- [x] Space Neurons and Neuron: the vault as space around a black hole or a white star, and as one living nerve cell with tasks, time and links (7.0.0)
 - [x] AI projects: Claude Code and Codex histories as a graph of your projects, linked by the spider (6.5.0)
 - [x] Shape catalog with 17 shapes, the spider that finds missing links, live wallpapers (6.0.0)
 - [x] Flora 3D: the vault as a 3D organism of particles (5.5.0)

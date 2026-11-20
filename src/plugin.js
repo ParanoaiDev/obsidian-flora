@@ -276,11 +276,8 @@ class NeuralGraphView extends obsidian.ItemView {
     // когда появилась каждая заметка: самое раннее из даты создания, изменения и даты в имени файла
     const times = {};
     for (const f of all) {
-      const st = f.stat || {};
-      let t = Math.min(st.ctime || Infinity, st.mtime || Infinity);
-      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(f.basename || "");
-      if (m) { const d = new Date(+m[1], +m[2] - 1, +m[3]).getTime(); if (d > 0 && d < t) t = d; }
-      if (t < Infinity) times[f.path] = t;
+      const t = floraBorn(f, f.extension === "md" ? app.metadataCache.getFileCache(f) : null);
+      if (t) times[f.path] = t;
     }
     const s = this.plugin.settings;
     return NG.buildGraph({
@@ -449,6 +446,12 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     this.addRibbonIcon("atom", "Flora 3D", () => this.openFlora3D());
     this.addRibbonIcon("image", L("Живые обои Flora", "Flora live wallpaper"), () => new FloraWallModal(this.app, this).open());
     this.addCommand({ id: "open-3d", name: L("Открыть Flora 3D", "Open Flora 3D"), callback: () => this.openFlora3D() });
+    this.registerView(SPACE_VIEW, (leaf) => new SpaceNeuronsView(leaf, this));
+    this.registerView(NEURON_VIEW, (leaf) => new NeuronView(leaf, this));
+    this.addRibbonIcon("brain-circuit", L("Нейрон", "Neuron"), () => this.openNeuron());
+    this.addCommand({ id: "open-neuron", name: L("Открыть нейрон", "Open Neuron"), callback: () => this.openNeuron() });
+    this.addRibbonIcon("orbit", "Space Neurons", () => this.openSpace());
+    this.addCommand({ id: "open-space", name: L("Открыть Space Neurons", "Open Space Neurons"), callback: () => this.openSpace() });
     // проекты с ИИ: истории Claude Code и Codex с этого компьютера
     this.registerView(AI_VIEW, (leaf) => new FloraAIView(leaf, this));
     if (FloraAI.available()) {
@@ -675,6 +678,24 @@ class NeuralGraphPlugin extends obsidian.Plugin {
     if (!leaf) {
       leaf = this.app.workspace.getLeaf("tab");
       await leaf.setViewState({ type: FLORA3D_VIEW, active: true });
+    }
+    this.app.workspace.revealLeaf(leaf);
+  }
+
+  async openNeuron() {
+    let leaf = this.app.workspace.getLeavesOfType(NEURON_VIEW)[0];
+    if (!leaf) {
+      leaf = this.app.workspace.getLeaf("tab");
+      await leaf.setViewState({ type: NEURON_VIEW, active: true });
+    }
+    this.app.workspace.revealLeaf(leaf);
+  }
+
+  async openSpace() {
+    let leaf = this.app.workspace.getLeavesOfType(SPACE_VIEW)[0];
+    if (!leaf) {
+      leaf = this.app.workspace.getLeaf("tab");
+      await leaf.setViewState({ type: SPACE_VIEW, active: true });
     }
     this.app.workspace.revealLeaf(leaf);
   }

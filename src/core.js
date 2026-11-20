@@ -21,6 +21,17 @@ function plural(n, ru, en) {
   const m10 = Math.abs(n) % 10, m100 = Math.abs(n) % 100;
   return ru[m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20) ? 1 : 2];
 }
+// когда появилась заметка: created/date в свойствах, дата в начале имени, дата создания или изменения файла
+function floraBorn(f, cache) {
+  const st = (f && f.stat) || {};
+  let t = Math.min(st.ctime || Infinity, st.mtime || Infinity);
+  const day = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || "")); return m ? new Date(+m[1], +m[2] - 1, +m[3]).getTime() : NaN; };
+  const fm = cache && cache.frontmatter;
+  for (const k of ["created", "date", "created_at", "Created"]) { const d = fm ? day(fm[k]) : NaN; if (d > 0 && d < t) t = d; }
+  const dn = day(f && f.basename);
+  if (dn > 0 && dn < t) t = dn;
+  return t < Infinity ? t : 0;
+}
 function floraNum(n) { return Number(n).toLocaleString(FLORA_LANG === "ru" ? "ru-RU" : "en-US"); }
 // значение, зависящее от языка: строится при первом обращении и заново после смены языка
 function floraLazy(build) {
